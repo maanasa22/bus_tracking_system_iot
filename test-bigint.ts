@@ -17,7 +17,7 @@ async function test() {
   
   let foundBigInt = false;
   // Recursively search for bigint
-  function findBigInt(obj, path = "") {
+  function findBigInt(obj: any, path = "") {
     if (obj === null || obj === undefined) return;
     if (typeof obj === 'bigint') {
        console.log(`FOUND BIGINT AT PATH: ${path} = ${obj}`);
