@@ -1,0 +1,17 @@
+{
+  "name": "TracyG Enterprise Tracker",
+  "short_name": "TracyG",
+  "description": "Real-time enterprise IoT fleet tracking and telemetry.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0e1a",
+  "theme_color": "#050812",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}
