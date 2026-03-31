@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { LogoutButton } from "@/components/auth/LogoutButton";
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -35,15 +36,9 @@ export default async function DriverLayout({ children }: { children: ReactNode }
           </div>
         </div>
         <div className="flex items-center gap-3">
-           <form action={async () => {
-             "use server";
-             const { signOut } = await import("@/lib/auth");
-             await signOut();
-           }}>
-             <button className="text-xs font-bold text-danger hover:underline">
-               Logout
-             </button>
-           </form>
+           <LogoutButton variant="icon" className="text-xs font-bold text-danger hover:underline">
+             Logout
+           </LogoutButton>
         </div>
       </header>
       

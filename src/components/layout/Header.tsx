@@ -1,7 +1,8 @@
 "use client";
 
-import { Bell, Search, LogOut } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { Bell, Search } from "lucide-react";
+import { LogoutButton } from "@/components/auth/LogoutButton";
+import { MobileSidebar } from "./MobileSidebar";
 import Image from "next/image";
 
 export function Header({ user }: { user: { name?: string | null; role?: string; image?: string | null } }) {
@@ -18,8 +19,8 @@ export function Header({ user }: { user: { name?: string | null; role?: string; 
         />
       </div>
 
-      <div className="flex md:hidden items-center">
-        {/* Mobile menu button could go here */}
+      <div className="flex md:hidden items-center gap-3">
+        <MobileSidebar />
         <span className="font-bold text-lg text-white">Tracy<span className="text-primary">G</span></span>
       </div>
 
@@ -45,13 +46,7 @@ export function Header({ user }: { user: { name?: string | null; role?: string; 
             {user.name ? user.name.charAt(0).toUpperCase() : "A"}
           </div>
 
-          <button 
-            onClick={() => signOut({ callbackUrl: "/auth/login" })}
-            className="p-2 text-slate-400 hover:text-danger hover:bg-danger/10 rounded-lg transition-colors ml-1"
-            title="Sign out"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+          <LogoutButton variant="icon" />
         </div>
       </div>
     </header>

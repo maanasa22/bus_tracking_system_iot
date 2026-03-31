@@ -18,9 +18,18 @@ const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
   const httpServer = createServer((req, res) => {
+    // Trust proxy headers for Next.js internal redirect URLs to avoid 0.0.0.0 bugs
+    if (req.headers["x-forwarded-host"]) {
+      req.headers.host = req.headers["x-forwarded-host"];
+    }
+    if (req.headers["x-forwarded-proto"]) {
+      req.headers["x-forwarded-proto"] = req.headers["x-forwarded-proto"]; // usually passed directly, but we can set proto
+      // Also Next.js sometimes uses 'x-forwarded-proto' to determine absolute URL scheme
+      req.headers["x-forwarded-protocol"] = req.headers["x-forwarded-proto"];
+    }
+
     const parsedUrl = parse(req.url, true);
-    
-    console.log(`[HTTP Sniffer] Request: ${req.url} | Pathname: ${parsedUrl.pathname}`);
+    // console.log(`[HTTP Sniffer] Request: ${req.headers.host}${req.url} | Pathname: ${parsedUrl.pathname}`);
     
     // CRITICAL: Prevent Next.js from intercepting Socket.IO traffic and returning 404
     if (parsedUrl.pathname && parsedUrl.pathname.startsWith("/api/socket/io")) {

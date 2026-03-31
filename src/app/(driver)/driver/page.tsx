@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { MapPin, Navigation, ShieldAlert, Phone, Users } from "lucide-react";
+import { MapPin, Navigation, ShieldAlert, Phone, Users, LogOut, Calendar } from "lucide-react";
 import Link from "next/link";
 import { DriverDashboardActions } from "./DriverDashboardActions";
+import { LogoutButton } from "@/components/auth/LogoutButton";
 
 export default async function DriverDashboard() {
   const session = await auth();
@@ -175,18 +176,12 @@ export default async function DriverDashboard() {
             
             {/* Quick Contacts */}
             <div className="grid grid-cols-2 gap-3 mt-auto">
-               <button className="flex items-center justify-center gap-2 p-3 rounded-lg border border-[#1e293b] text-slate-400 hover:text-white hover:bg-[#111827] transition-colors text-sm font-semibold">
-                 <Phone className="h-4 w-4" /> Dispatch
-               </button>
-               <form action={async () => {
-                 "use server";
-                 const { signOut } = await import("@/lib/auth");
-                 await signOut();
-               }}>
-                 <button className="w-full flex items-center justify-center gap-2 p-3 rounded-lg border border-warning/30 text-warning hover:bg-warning/10 transition-colors text-sm font-semibold">
-                   End Shift
-                 </button>
-               </form>
+               <Link href="/driver/history" className="flex items-center justify-center gap-2 p-3 rounded-lg border border-[#1e293b] text-slate-400 hover:text-white hover:bg-[#111827] transition-colors text-sm font-semibold">
+                 <Calendar className="h-4 w-4" /> Trip History
+               </Link>
+               <LogoutButton className="w-full flex items-center justify-center gap-2 p-3 rounded-lg border border-warning/30 text-warning hover:bg-warning/10 transition-colors text-sm font-semibold">
+                 <LogOut className="h-4 w-4" /> End Shift
+               </LogoutButton>
             </div>
           </>
         ) : (
