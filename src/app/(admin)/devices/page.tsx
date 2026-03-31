@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Cpu, Battery, Signal, Wifi, Search, Filter, RefreshCw, AlertCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { ClientSearchFilter } from "@/components/ClientSearchFilter";
 
 export default async function DevicesPage() {
   const devices = await prisma.device.findMany({
@@ -60,27 +61,24 @@ export default async function DevicesPage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="glass-card p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input 
-            type="text" 
-            placeholder="Search by Device ID or MAC..." 
-            className="input pl-10 bg-[#111827] border-[#1e293b]"
-          />
-        </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <button className="btn-ghost bg-[#111827] flex-1 sm:flex-none">
-            <Filter className="h-4 w-4" />
-            Status: All
-          </button>
-        </div>
-      </div>
-
-      {/* Device Grid */}
+      <ClientSearchFilter
+        items={devices}
+        searchKeys={["deviceId", "macAddress", "firmware", "bus.numberPlate"]}
+        placeholder="Search by Device ID, MAC, or Bus..."
+        filterKey="status"
+        filterOptions={[
+          { label: "Online", value: "ONLINE" },
+          { label: "Warning", value: "WARNING" },
+          { label: "Offline", value: "OFFLINE" },
+        ]}
+      >
+        {(filteredDevices: any[]) => (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {devices.map((device) => (
+        {filteredDevices.length === 0 ? (
+          <div className="col-span-1 md:col-span-2 xl:col-span-3 py-12 text-center text-muted-foreground">
+            <p>No devices matching your search.</p>
+          </div>
+        ) : filteredDevices.map((device: any) => (
           <div key={device.id} className="glass-card p-5 relative overflow-hidden group">
             {/* Status Indicator Bar */}
             <div className={`absolute top-0 left-0 right-0 h-1 ${
@@ -173,6 +171,8 @@ export default async function DevicesPage() {
           </div>
         ))}
       </div>
+        )}
+      </ClientSearchFilter>
     </div>
   );
 }

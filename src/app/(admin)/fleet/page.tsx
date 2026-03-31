@@ -2,10 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { Bus, Plus, Search, Filter, MoreVertical, Edit2, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
+import { ClientSearchFilter } from "@/components/ClientSearchFilter";
 
 export default async function FleetPage() {
   // Fetch buses with related driver and device info
-  const buses = await prisma.bus.findMany({
+  const rawBuses = await prisma.bus.findMany({
     include: {
       driver: {
         include: { user: true }
@@ -15,6 +16,10 @@ export default async function FleetPage() {
     },
     orderBy: { createdAt: "desc" }
   });
+
+  // Serialize for client-side filtering (BigInt-safe)
+  const replacer = (k: string, v: any) => typeof v === 'bigint' ? v.toString() : v;
+  const buses = JSON.parse(JSON.stringify(rawBuses, replacer));
 
   return (
     <div className="space-y-6 animate-fade-in pl-4 pr-4">
@@ -35,28 +40,18 @@ export default async function FleetPage() {
         </div>
       </div>
 
-      {/* Filters and Search */}
-      <div className="glass-card p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input 
-            type="text" 
-            placeholder="Search by registration, model, or driver..." 
-            className="input pl-10 bg-[#111827] border-[#1e293b]"
-          />
-        </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <button className="btn-ghost bg-[#111827] flex-1 sm:flex-none">
-            <Filter className="h-4 w-4" />
-            Status: All
-          </button>
-          <button className="btn-ghost bg-[#111827] flex-1 sm:flex-none">
-            Route: All
-          </button>
-        </div>
-      </div>
-
-      {/* Data Table */}
+      <ClientSearchFilter
+        items={buses}
+        searchKeys={["numberPlate", "model", "driver.user.name"]}
+        placeholder="Search by registration, model, or driver..."
+        filterKey="status"
+        filterOptions={[
+          { label: "Active", value: "ACTIVE" },
+          { label: "Inactive", value: "INACTIVE" },
+          { label: "Maintenance", value: "MAINTENANCE" },
+        ]}
+      >
+        {(filteredBuses: any[]) => (
       <div className="glass-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="data-table">
@@ -72,13 +67,13 @@ export default async function FleetPage() {
               </tr>
             </thead>
             <tbody>
-              {buses.length === 0 ? (
+              {filteredBuses.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-muted-foreground">
-                    No vehicles found in the fleet.
+                    No vehicles found matching your search.
                   </td>
                 </tr>
-              ) : buses.map((bus) => (
+              ) : filteredBuses.map((bus: any) => (
                 <tr key={bus.id} className="group">
                   <td>
                     <div className="flex items-center gap-3">
@@ -141,6 +136,8 @@ export default async function FleetPage() {
           </table>
         </div>
       </div>
+        )}
+      </ClientSearchFilter>
     </div>
   );
 }

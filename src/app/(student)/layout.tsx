@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Bus, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { StudentBottomNav } from "./StudentBottomNav";
+import { LogoutButton } from "@/components/auth/LogoutButton";
 
 export default async function StudentLayout({ children }: { children: ReactNode }) {
   const session = await auth();
@@ -31,16 +32,10 @@ export default async function StudentLayout({ children }: { children: ReactNode 
              <span className="text-[10px] font-bold tracking-wide">Track</span>
            </Link>
            <StudentBottomNav />
-           <form action={async () => {
-             "use server";
-             const { signOut } = await import("@/lib/auth");
-             await signOut();
-           }}>
-             <button className="flex flex-col items-center gap-1 text-slate-400 hover:text-danger transition-colors">
-               <UserCircle className="h-6 w-6" />
-               <span className="text-[10px] font-bold tracking-wide">Logout</span>
-             </button>
-           </form>
+           <LogoutButton className="flex flex-col items-center gap-1 text-slate-400 hover:text-danger hover:bg-transparent bg-transparent transition-colors p-0 rounded-none w-auto">
+             <UserCircle className="h-6 w-6" />
+             <span className="text-[10px] font-bold tracking-wide">Logout</span>
+           </LogoutButton>
         </div>
       </nav>
     </div>
