@@ -4,7 +4,7 @@ import * as Location from 'expo-location';
 import { io } from 'socket.io-client';
 
 // The Public Serveo Shell URL for robust 4G ISP testing without AuthTokens
-const SERVER_URL = 'https://9cead0c254da0af3-106-196-18-47.serveousercontent.com';
+const SERVER_URL = 'https://YOUR_RAILWAY_DOMAIN.up.railway.app';
 
 export default function App() {
   const [busId, setBusId] = useState('BUS-001');
@@ -21,9 +21,6 @@ export default function App() {
       path: '/api/socket/io',
       transports: ['websocket'],
       autoConnect: false, // Wait until driver presses start
-      extraHeaders: {
-        "Bypass-Tunnel-Reminder": "true" // Required to bypass LocalTunnel's warning page
-      }
     });
 
     socketRef.current.on('connect', () => setIsConnected(true));

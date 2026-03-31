@@ -2,6 +2,13 @@ import { ReactNode } from "react";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good Morning";
+  if (hour < 17) return "Good Afternoon";
+  return "Good Evening";
+}
+
 export default async function DriverLayout({ children }: { children: ReactNode }) {
   const session = await auth();
 
@@ -23,7 +30,7 @@ export default async function DriverLayout({ children }: { children: ReactNode }
              {session.user.name?.charAt(0) || 'D'}
           </div>
           <div>
-            <h2 className="font-bold text-white text-sm leading-tight">{session.user.name}</h2>
+            <h2 className="font-bold text-white text-sm leading-tight">{getGreeting()}, {session.user.name?.split(' ')[0]}</h2>
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest leading-tight">Driver Portal</p>
           </div>
         </div>

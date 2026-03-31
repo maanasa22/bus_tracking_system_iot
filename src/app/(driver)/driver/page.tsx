@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { MapPin, Navigation, Power, ShieldAlert, Phone, Users } from "lucide-react";
+import { MapPin, Navigation, ShieldAlert, Phone, Users } from "lucide-react";
 import Link from "next/link";
-import { format } from "date-fns";
+import { DriverDashboardActions } from "./DriverDashboardActions";
 
 export default async function DriverDashboard() {
   const session = await auth();
@@ -36,6 +36,46 @@ export default async function DriverDashboard() {
   const route = activeSchedule?.route;
   const assignedBus = route?.buses?.[0];
 
+  // Determine shift status based on current time
+  let shiftStatus: "active" | "upcoming" | "off" = "off";
+  let shiftMessage = "Off Duty";
+  let shiftMinutesUntil = 0;
+
+  if (activeSchedule) {
+    const now = new Date();
+    const currentDay = now.getDay(); // 0=Sunday
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    // Parse schedule times
+    const [startH, startM] = activeSchedule.startTime.split(":").map(Number);
+    const [endH, endM] = activeSchedule.endTime.split(":").map(Number);
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+
+    if (currentDay === activeSchedule.dayOfWeek || (activeSchedule.dayOfWeek >= 1 && activeSchedule.dayOfWeek <= 5 && currentDay >= 1 && currentDay <= 5)) {
+      if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) {
+        shiftStatus = "active";
+        shiftMessage = "Shift Active";
+      } else if (currentMinutes < startMinutes && (startMinutes - currentMinutes) <= 60) {
+        shiftStatus = "upcoming";
+        shiftMinutesUntil = startMinutes - currentMinutes;
+        shiftMessage = `Starts in ${shiftMinutesUntil} min`;
+      }
+    }
+  }
+
+  // Get real student counts for first 3 stops
+  const stopsWithStudentCounts = route ? await Promise.all(
+    route.stops.slice(0, 4).map(async (stop) => {
+      const count = await prisma.student.count({ where: { stopId: stop.id } });
+      return { ...stop, studentCount: count };
+    })
+  ) : [];
+
+  // Calculate ETAs based on route duration
+  const totalStops = route?.stops.length || 1;
+  const etaPerStop = route?.duration ? Math.round(route.duration / totalStops) : 15;
+
   return (
     <div className="flex-1 flex flex-col bg-[#050812]">
       {/* Route & Vehicle Sticky Header */}
@@ -46,6 +86,9 @@ export default async function DriverDashboard() {
             <h1 className="text-xl font-bold text-white leading-none">
               {route ? route.name : "Unassigned"}
             </h1>
+            {route?.description && (
+              <p className="text-sm text-muted-foreground mt-1">{route.description}</p>
+            )}
           </div>
           <div className="text-right">
             <span className="text-xs font-bold uppercase tracking-widest text-[#64748b] mb-1 block">Vehicle</span>
@@ -56,10 +99,22 @@ export default async function DriverDashboard() {
         </div>
         
         {activeSchedule && (
-           <div className="flex items-center justify-between bg-[#111827] rounded-lg p-3">
+           <div className={`flex items-center justify-between rounded-lg p-3 ${
+             shiftStatus === 'active' ? 'bg-success/10 border border-success/20' :
+             shiftStatus === 'upcoming' ? 'bg-warning/10 border border-warning/20' :
+             'bg-[#111827]'
+           }`}>
              <div className="flex items-center gap-2">
-               <div className="w-3 h-3 rounded-full bg-success animate-pulse"></div>
-               <span className="text-sm font-semibold text-slate-300">Shift Started</span>
+               <div className={`w-3 h-3 rounded-full animate-pulse ${
+                 shiftStatus === 'active' ? 'bg-success' :
+                 shiftStatus === 'upcoming' ? 'bg-warning' :
+                 'bg-slate-500'
+               }`}></div>
+               <span className={`text-sm font-semibold ${
+                 shiftStatus === 'active' ? 'text-success' :
+                 shiftStatus === 'upcoming' ? 'text-warning' :
+                 'text-slate-400'
+               }`}>{shiftMessage}</span>
              </div>
              <div className="text-sm font-bold font-mono text-white">
                {activeSchedule.startTime} - {activeSchedule.endTime}
@@ -77,10 +132,10 @@ export default async function DriverDashboard() {
                 <Navigation className="h-8 w-8" />
                 <span className="font-bold">Start Route</span>
               </Link>
-              <button className="glass-card bg-[#1e293b] hover:bg-[#273248] text-white p-4 rounded-xl flex flex-col items-center justify-center gap-2 active:scale-95 transition-all text-danger">
-                <ShieldAlert className="h-8 w-8" />
-                <span className="font-bold">SOS Panic</span>
-              </button>
+              <DriverDashboardActions 
+                busId={assignedBus?.id || null} 
+                busPlate={assignedBus?.numberPlate || null} 
+              />
             </div>
 
             {/* Next Stops Summary */}
@@ -94,7 +149,7 @@ export default async function DriverDashboard() {
                <div className="space-y-6 ml-3 relative">
                  <div className="absolute top-2 left-[-16px] bottom-2 w-px bg-[#1e293b]"></div>
                  
-                 {route.stops.slice(0, 3).map((stop: any, i: number) => (
+                 {stopsWithStudentCounts.slice(0, 3).map((stop, i: number) => (
                    <div key={stop.id} className="relative">
                      {/* Point indicator */}
                      <div className={`absolute top-1 left-[-20.5px] w-2.5 h-2.5 rounded-full ${i === 0 ? 'bg-info shadow-[0_0_10px_theme(colors.info)]' : 'bg-[#334155]'}`}></div>
@@ -102,22 +157,20 @@ export default async function DriverDashboard() {
                      <div className="flex justify-between items-start">
                        <div>
                          <h4 className={`font-bold ${i === 0 ? 'text-white' : 'text-slate-400'}`}>{stop.name}</h4>
-                         <p className="text-xs text-muted-foreground mt-0.5">Estimated: {15 * (i+1)} mins</p>
+                         <p className="text-xs text-muted-foreground mt-0.5">ETA: ~{etaPerStop * (i + 1)} mins</p>
                        </div>
-                       {i === 0 && (
-                         <div className="flex items-center gap-1.5 bg-[#111827] px-2 py-1 rounded-md border border-[#1e293b]">
-                           <Users className="h-3 w-3 text-secondary" />
-                           <span className="text-xs font-bold text-slate-300">Wait: 4</span>
-                         </div>
-                       )}
+                       <div className="flex items-center gap-1.5 bg-[#111827] px-2 py-1 rounded-md border border-[#1e293b]">
+                         <Users className="h-3 w-3 text-secondary" />
+                         <span className="text-xs font-bold text-slate-300">{stop.studentCount} waiting</span>
+                       </div>
                      </div>
                    </div>
                  ))}
                </div>
                
-               <button className="w-full mt-5 py-2 text-sm text-slate-400 font-medium hover:text-white transition-colors bg-[#0c1222] rounded-md">
-                 View Full Itinerary ({route.stops.length} stops)
-               </button>
+               <Link href="/driver/route" className="w-full mt-5 py-2 text-sm text-slate-400 font-medium hover:text-white transition-colors bg-[#0c1222] rounded-md block text-center">
+                 View Full Itinerary ({route.stops.length} stops) →
+               </Link>
             </div>
             
             {/* Quick Contacts */}
@@ -125,9 +178,15 @@ export default async function DriverDashboard() {
                <button className="flex items-center justify-center gap-2 p-3 rounded-lg border border-[#1e293b] text-slate-400 hover:text-white hover:bg-[#111827] transition-colors text-sm font-semibold">
                  <Phone className="h-4 w-4" /> Dispatch
                </button>
-               <button className="flex items-center justify-center gap-2 p-3 rounded-lg border border-[#1e293b] text-slate-400 hover:text-white hover:bg-[#111827] transition-colors text-sm font-semibold text-warning">
-                 <Power className="h-4 w-4" /> End Shift
-               </button>
+               <form action={async () => {
+                 "use server";
+                 const { signOut } = await import("@/lib/auth");
+                 await signOut();
+               }}>
+                 <button className="w-full flex items-center justify-center gap-2 p-3 rounded-lg border border-warning/30 text-warning hover:bg-warning/10 transition-colors text-sm font-semibold">
+                   End Shift
+                 </button>
+               </form>
             </div>
           </>
         ) : (

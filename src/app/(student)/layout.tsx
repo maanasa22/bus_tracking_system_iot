@@ -1,8 +1,9 @@
 import { ReactNode } from "react";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { Bus, Bell, Settings, UserCircle } from "lucide-react";
+import { Bus, UserCircle } from "lucide-react";
 import Link from "next/link";
+import { StudentBottomNav } from "./StudentBottomNav";
 
 export default async function StudentLayout({ children }: { children: ReactNode }) {
   const session = await auth();
@@ -29,16 +30,7 @@ export default async function StudentLayout({ children }: { children: ReactNode 
              <Bus className="h-6 w-6" />
              <span className="text-[10px] font-bold tracking-wide">Track</span>
            </Link>
-           <button className="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition-colors relative">
-             <div className="absolute top-0 right-1 w-2.5 h-2.5 bg-danger rounded-full border-2 border-[#0f172a]"></div>
-             <Bell className="h-6 w-6" />
-             <span className="text-[10px] font-bold tracking-wide">Alerts</span>
-           </button>
-           <button className="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition-colors">
-             <Settings className="h-6 w-6" />
-             <span className="text-[10px] font-bold tracking-wide">Settings</span>
-           </button>
-           
+           <StudentBottomNav />
            <form action={async () => {
              "use server";
              const { signOut } = await import("@/lib/auth");
