@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   Bus, LayoutDashboard, Map, Settings, Route, 
-  AlertTriangle, ShieldCheck, Activity, Users, FileText
+  AlertTriangle, ShieldCheck, Activity, Users, FileText, TrendingUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,7 @@ const NAV_ITEMS = [
     { name: "Driver Profiles", href: "/drivers", icon: Users },
   ]},
   { group: "Monitoring", items: [
+    { name: "Analytics", href: "/analytics", icon: TrendingUp },
     { name: "Alerts & Events", href: "/alerts", icon: AlertTriangle },
     { name: "Device Health", href: "/devices", icon: Activity },
     { name: "Safety & Compliance", href: "/safety", icon: ShieldCheck },
