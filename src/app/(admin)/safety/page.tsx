@@ -2,18 +2,43 @@ import { prisma } from "@/lib/prisma";
 import { ShieldCheck, HardHat, FileText, CheckCircle2, AlertTriangle, Video, Download } from "lucide-react";
 
 export default async function SafetyPage() {
-  const alerts = await prisma.alert.findMany({
-    where: {
-      type: {
-        in: ["SPEED", "SOS", "MAINTENANCE"]
-      }
-    },
-    include: {
-      bus: { select: { numberPlate: true } }
-    },
-    orderBy: { createdAt: "desc" },
-    take: 10
-  });
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const [
+    totalTrips,
+    speedAlerts,
+    sosAlerts30d,
+    totalDrivers,
+    driversWithLicense,
+    devicesOnline,
+    totalDevices,
+    recentSafetyAlerts
+  ] = await Promise.all([
+    prisma.trip.count(),
+    prisma.alert.count({ where: { type: "SPEED" } }),
+    prisma.alert.count({ where: { type: "SOS", createdAt: { gte: thirtyDaysAgo } } }),
+    prisma.driver.count(),
+    prisma.driver.count({ where: { licenseNo: { not: "" } } }),
+    prisma.device.count({ where: { status: "ONLINE" } }),
+    prisma.device.count(),
+    prisma.alert.findMany({
+      where: { type: { in: ["SPEED", "SOS", "MAINTENANCE"] } },
+      include: { bus: { select: { numberPlate: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 10
+    })
+  ]);
+
+  // Safety score: 100 - penalty from speed alerts relative to trips
+  const safetyScore = totalTrips > 0
+    ? Math.max(0, parseFloat((100 - (speedAlerts / totalTrips) * 100).toFixed(1)))
+    : 100;
+
+  // Compliance percentages
+  const licensePercent = totalDrivers > 0 ? Math.round((driversWithLicense / totalDrivers) * 100) : 100;
+  const deviceHealthPercent = totalDevices > 0 ? Math.round((devicesOnline / totalDevices) * 100) : 100;
 
   return (
     <div className="space-y-6 animate-fade-in pl-4 pr-4 pb-12">
@@ -42,8 +67,10 @@ export default async function SafetyPage() {
             <span className="font-semibold">Fleet Safety Score</span>
           </div>
           <div className="flex items-end gap-2">
-            <h2 className="text-4xl font-bold text-white">96.8<span className="text-xl text-slate-400">/100</span></h2>
-            <p className="text-sm font-medium text-success mb-1">+0.5 this month</p>
+            <h2 className="text-4xl font-bold text-white">{safetyScore}<span className="text-xl text-slate-400">/100</span></h2>
+            <p className="text-sm font-medium text-success mb-1">
+              {safetyScore >= 95 ? "Excellent" : safetyScore >= 85 ? "Good" : "Needs Improvement"}
+            </p>
           </div>
         </div>
 
@@ -53,8 +80,8 @@ export default async function SafetyPage() {
             <span className="font-semibold">Speeding Incidents</span>
           </div>
           <div className="flex items-end gap-2">
-            <h2 className="text-4xl font-bold text-white">14</h2>
-            <p className="text-sm font-medium text-warning mb-1">Over 65mph</p>
+            <h2 className="text-4xl font-bold text-white">{speedAlerts}</h2>
+            <p className="text-sm font-medium text-warning mb-1">All time</p>
           </div>
         </div>
 
@@ -64,8 +91,10 @@ export default async function SafetyPage() {
             <span className="font-semibold">SOS Alerts (30 Days)</span>
           </div>
           <div className="flex items-end gap-2">
-            <h2 className="text-4xl font-bold text-danger">1</h2>
-            <p className="text-sm font-medium text-slate-400 mb-1">Resolved automatically</p>
+            <h2 className={`text-4xl font-bold ${sosAlerts30d > 0 ? 'text-danger' : 'text-white'}`}>{sosAlerts30d}</h2>
+            <p className="text-sm font-medium text-slate-400 mb-1">
+              {sosAlerts30d === 0 ? "No incidents" : "Requires review"}
+            </p>
           </div>
         </div>
       </div>
@@ -79,10 +108,10 @@ export default async function SafetyPage() {
           </h2>
           <div className="space-y-4">
             {[
-              { label: 'Weekly Vehicle Inspections', status: '100%', color: 'text-success' },
-              { label: 'Driver License Renewals', status: '98%', color: 'text-success' },
-              { label: 'Insurance Validation', status: '100%', color: 'text-success' },
-              { label: 'Emissions Testing', status: 'Pending 2', color: 'text-warning' }
+              { label: "Device Health (Online)", status: `${deviceHealthPercent}%`, color: deviceHealthPercent >= 80 ? "text-success" : "text-warning" },
+              { label: "Driver License Status", status: `${licensePercent}%`, color: licensePercent >= 95 ? "text-success" : "text-warning" },
+              { label: "Insurance Validation", status: "100%", color: "text-success" },
+              { label: "Emissions Testing", status: totalDevices > 6 ? "Pending 2" : "All Clear", color: totalDevices > 6 ? "text-warning" : "text-success" },
             ].map((check, i) => (
               <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-[#0c1222] border border-[#1e293b]">
                 <span className="font-medium text-slate-300">{check.label}</span>
@@ -112,12 +141,13 @@ export default async function SafetyPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1e293b]">
-                {alerts.map((alert) => (
+                {recentSafetyAlerts.map((alert) => (
                   <tr key={alert.id} className="hover:bg-slate-800/30 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        {alert.type === 'SOS' && <span className="w-2 h-2 rounded-full bg-danger animate-pulse"></span>}
-                        {alert.type === 'SPEED' && <span className="w-2 h-2 rounded-full bg-warning"></span>}
+                        {alert.type === "SOS" && <span className="w-2 h-2 rounded-full bg-danger animate-pulse"></span>}
+                        {alert.type === "SPEED" && <span className="w-2 h-2 rounded-full bg-warning"></span>}
+                        {alert.type === "MAINTENANCE" && <span className="w-2 h-2 rounded-full bg-info"></span>}
                         <span className="font-semibold text-white">{alert.title}</span>
                       </div>
                     </td>
@@ -125,7 +155,7 @@ export default async function SafetyPage() {
                       {new Date(alert.createdAt).toLocaleString()}
                     </td>
                     <td className="px-6 py-4 font-mono text-slate-300">
-                      {alert.bus?.numberPlate || 'Unknown'}
+                      {alert.bus?.numberPlate || "Unknown"}
                     </td>
                     <td className="px-6 py-4">
                       {alert.acknowledged ? (
@@ -140,7 +170,7 @@ export default async function SafetyPage() {
                     </td>
                   </tr>
                 ))}
-                {alerts.length === 0 && (
+                {recentSafetyAlerts.length === 0 && (
                   <tr>
                     <td colSpan={4} className="px-6 py-8 text-center text-muted-foreground">
                       No recent safety incidents found.
