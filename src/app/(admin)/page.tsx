@@ -1,10 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { 
   Bus, Users, AlertTriangle, Route, ShieldAlert,
-  Clock, Activity, MapPin
+  Clock, Activity, MapPin, Bell
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { DashboardChart } from "./DashboardChart";
 
 export default async function DashboardPage() {
+  const now = new Date();
+  const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
+  const yesterdayStart = new Date(todayStart); yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+
   // Fetch real KPI data from the database
   const [
     totalBuses,
@@ -12,7 +18,9 @@ export default async function DashboardPage() {
     totalStudents,
     totalRoutes,
     activeAlerts,
-    tripsToday
+    tripsToday,
+    tripsYesterday,
+    recentAlerts
   ] = await Promise.all([
     prisma.bus.count(),
     prisma.bus.count({ where: { status: "ACTIVE" } }),
@@ -20,13 +28,53 @@ export default async function DashboardPage() {
     prisma.route.count(),
     prisma.alert.count({ where: { acknowledged: false } }),
     prisma.trip.count({
-      where: {
-        startTime: {
-          gte: new Date(new Date().setHours(0, 0, 0, 0))
-        }
-      }
+      where: { startTime: { gte: todayStart } }
+    }),
+    prisma.trip.count({
+      where: { startTime: { gte: yesterdayStart, lt: todayStart } }
+    }),
+    prisma.alert.findMany({
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: { bus: { select: { numberPlate: true } } }
     })
   ]);
+
+  // Calculate trip delta
+  const tripDelta = tripsYesterday > 0
+    ? Math.round(((tripsToday - tripsYesterday) / tripsYesterday) * 100)
+    : tripsToday > 0 ? 100 : 0;
+  const tripDeltaSign = tripDelta >= 0 ? "+" : "";
+
+  // Build 7-day chart data
+  const chartData = [];
+  for (let i = 6; i >= 0; i--) {
+    const dayStart = new Date(todayStart);
+    dayStart.setDate(dayStart.getDate() - i);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+    
+    const [total, onTime] = await Promise.all([
+      prisma.trip.count({ where: { startTime: { gte: dayStart, lt: dayEnd } } }),
+      prisma.trip.count({ where: { startTime: { gte: dayStart, lt: dayEnd }, onTime: true } }),
+    ]);
+    
+    chartData.push({
+      day: dayStart.toLocaleDateString("en-IN", { weekday: "short" }),
+      trips: total,
+      onTime,
+    });
+  }
+
+  // Severity helpers
+  const getSeverityIcon = (severity: string) => {
+    switch (severity) {
+      case "CRITICAL": return <ShieldAlert className="h-4 w-4 text-danger" />;
+      case "WARNING": return <AlertTriangle className="h-4 w-4 text-warning" />;
+      case "SUCCESS": return <Activity className="h-4 w-4 text-success" />;
+      default: return <Bell className="h-4 w-4 text-info" />;
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in pl-4 pr-4">
@@ -63,7 +111,7 @@ export default async function DashboardPage() {
           </div>
           <div className="mt-4 flex items-center gap-2">
             <span className="text-success text-xs font-semibold bg-success/10 px-2 py-0.5 rounded">
-              {Math.round((activeBuses / totalBuses) * 100)}% Online
+              {totalBuses > 0 ? Math.round((activeBuses / totalBuses) * 100) : 0}% Online
             </span>
           </div>
         </div>
@@ -96,8 +144,12 @@ export default async function DashboardPage() {
             </div>
           </div>
           <div className="mt-4 flex items-center gap-2">
-            <span className="text-success text-xs font-semibold bg-success/10 px-2 py-0.5 rounded flex items-center gap-1">
-              <Activity className="w-3 h-3" /> 12% vs yesterday
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded flex items-center gap-1 ${
+              tripDelta >= 0 
+                ? 'text-success bg-success/10' 
+                : 'text-warning bg-warning/10'
+            }`}>
+              <Activity className="w-3 h-3" /> {tripDeltaSign}{tripDelta}% vs yesterday
             </span>
           </div>
         </div>
@@ -130,37 +182,58 @@ export default async function DashboardPage() {
       {/* Main Content Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
         
-        {/* Left Column - Fleet Status Chart (Placeholder for now) */}
-        <div className="lg:col-span-2 glass-card p-6 h-[400px] flex flex-col items-center justify-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-[#1e293b]/50 to-transparent z-0"></div>
-          <div className="relative z-10 text-center">
-            <Activity className="w-16 h-16 text-primary/40 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">Fleet Analytics Empty State</h3>
-            <p className="text-muted-foreground max-w-sm mx-auto">Recharts line charts will be placed here to visualize passenger load over time.</p>
+        {/* Left Column - 7 Day Trip Chart */}
+        <div className="lg:col-span-2 glass-card p-6 h-[400px] flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Activity className="w-5 h-5 text-primary" />
+              Trip Volume — Last 7 Days
+            </h3>
+            <span className="text-xs text-muted-foreground bg-[#111827] px-2 py-1 rounded font-mono">
+              {chartData.reduce((sum, d) => sum + d.trips, 0)} total
+            </span>
+          </div>
+          <div className="flex-1">
+            <DashboardChart data={chartData} />
           </div>
         </div>
 
-        {/* Right Column - Map/Recent Activity */}
+        {/* Right Column - Real Alerts Feed */}
         <div className="glass-card p-6 h-[400px] flex flex-col">
           <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
             <MapPin className="w-5 h-5 text-secondary" /> 
-            Recent Tracking Events
+            Recent Events
           </h3>
-          <div className="flex-1 overflow-y-auto no-scrollbar space-y-4">
-            {[1,2,3,4,5].map((i) => (
-              <div key={i} className="flex gap-4 p-3 rounded-lg hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-700">
-                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center shrink-0 border border-slate-700">
-                  <Bus className="w-5 h-5 text-slate-400" />
+          <div className="flex-1 overflow-y-auto no-scrollbar space-y-3">
+            {recentAlerts.length > 0 ? recentAlerts.map((alert) => (
+              <div key={alert.id} className="flex gap-3 p-3 rounded-lg hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-700">
+                <div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center shrink-0 border border-slate-700">
+                  {getSeverityIcon(alert.severity)}
                 </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-white">BUS-00{i}</span>
-                    <span className="text-[10px] text-muted-foreground">Just now</span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="font-semibold text-white text-sm truncate">{alert.title}</span>
                   </div>
-                  <p className="text-xs text-slate-400">Passed Mahalakshmi Layout stop with 32 passengers.</p>
+                  <p className="text-xs text-slate-400 line-clamp-2 mb-1">{alert.message}</p>
+                  <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                    <span>{formatDistanceToNow(new Date(alert.createdAt), { addSuffix: true })}</span>
+                    {alert.bus && (
+                      <>
+                        <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                        <span className="font-mono text-secondary">{alert.bus.numberPlate}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="flex-1 flex items-center justify-center text-center text-slate-500 p-6">
+                <div>
+                  <Activity className="w-10 h-10 mx-auto mb-2 text-slate-600" />
+                  <p className="text-sm">No recent events</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

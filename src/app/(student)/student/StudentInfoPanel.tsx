@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSocket } from "@/components/providers/socket-provider";
-import { Navigation, AlertTriangle, CheckCircle2, Share2, MapPin } from "lucide-react";
+import { Navigation, AlertTriangle, CheckCircle2, Share2, MapPin, Bus } from "lucide-react";
 
 interface StudentInfoPanelProps {
   busId: string;
@@ -37,6 +37,7 @@ export default function StudentInfoPanel({
   const { socket, isConnected } = useSocket();
   const [busLocation, setBusLocation] = useState<{ lat: number; lng: number; speed: number } | null>(null);
   const [showIssueModal, setShowIssueModal] = useState(false);
+  const hasVibrated = useRef(false);
 
   useEffect(() => {
     if (!socket || !isConnected || !busId) return;
@@ -55,21 +56,33 @@ export default function StudentInfoPanel({
   // Calculate live distance and ETA
   let distanceKm = 0;
   let etaMinutes = 0;
-  let status: "approaching" | "arrived" | "waiting" = "waiting";
+  let status: "nearby" | "enroute" | "arrived" | "waiting" = "waiting";
 
   if (busLocation) {
     distanceKm = haversineDistance(busLocation.lat, busLocation.lng, stopLat, stopLng);
     
     // ETA: distance / speed (km/h → minutes)
-    const speedKmh = busLocation.speed > 0 ? busLocation.speed : 25; // Assume 25 km/h if stationary
+    const speedKmh = busLocation.speed > 0 ? busLocation.speed : 25;
     etaMinutes = Math.max(1, Math.round((distanceKm / speedKmh) * 60));
 
     if (distanceKm < 0.1) {
       status = "arrived";
+    } else if (distanceKm < 0.5) {
+      status = "nearby"; // Within 500m — approaching!
     } else {
-      status = "approaching";
+      status = "enroute";
     }
   }
+
+  // Trigger one-time haptic vibration when bus enters 500m zone
+  useEffect(() => {
+    if (status === "nearby" && !hasVibrated.current) {
+      hasVibrated.current = true;
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        navigator.vibrate([200, 100, 200]);
+      }
+    }
+  }, [status]);
 
   const handleShare = async () => {
     const shareUrl = `https://www.google.com/maps?q=${stopLat},${stopLng}`;
@@ -94,6 +107,19 @@ export default function StudentInfoPanel({
 
   return (
     <div className="bg-[#0f172a] border-t border-slate-800 rounded-t-3xl shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-20 pb-16">
+      {/* Approaching Stop Banner — pulsing alert when bus < 500m */}
+      {status === "nearby" && (
+        <div className="bg-gradient-to-r from-amber-500/20 via-amber-500/30 to-amber-500/20 border-b border-amber-500/30 px-5 py-3 animate-pulse">
+          <div className="flex items-center justify-center gap-3">
+            <Bus className="h-5 w-5 text-amber-400 animate-bounce" />
+            <div className="text-center">
+              <p className="text-sm font-black text-amber-300 uppercase tracking-wider">Your Bus is Approaching!</p>
+              <p className="text-xs text-amber-400/80 font-medium">Get ready at your stop — {Math.round(distanceKm * 1000)}m away</p>
+            </div>
+            <Bus className="h-5 w-5 text-amber-400 animate-bounce" />
+          </div>
+        </div>
+      )}
       <div className="w-12 h-1.5 bg-slate-700/50 rounded-full mx-auto my-3 mt-4"></div>
 
       <div className="p-5 pt-2">
@@ -103,6 +129,8 @@ export default function StudentInfoPanel({
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 block">Live Status</span>
             {status === "arrived" ? (
               <h2 className="text-3xl font-black text-success">Arrived! 🎉</h2>
+            ) : status === "nearby" ? (
+              <h2 className="text-3xl font-black text-amber-400">Almost Here!</h2>
             ) : busLocation ? (
               <h2 className="text-3xl font-black text-white">
                 {etaMinutes <= 10 ? "On Time" : "Delayed"}
@@ -135,7 +163,9 @@ export default function StudentInfoPanel({
             <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
               status === "arrived" 
                 ? 'bg-success/10 border border-success/20 text-success' 
-                : 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-400'
+                : status === "nearby"
+                  ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
+                  : 'bg-indigo-500/10 border border-indigo-500/20 text-indigo-400'
             }`}>
               {status === "arrived" ? (
                 <CheckCircle2 className="h-5 w-5" />
@@ -145,7 +175,7 @@ export default function StudentInfoPanel({
             </div>
             <div>
               <p className="font-bold text-sm text-slate-200">
-                {status === "arrived" ? "Bus has arrived!" : status === "approaching" ? "Approaching Stop" : "Waiting for bus"}
+                {status === "arrived" ? "Bus has arrived!" : status === "nearby" ? "Bus is very close!" : status === "enroute" ? "En Route to Stop" : "Waiting for bus"}
               </p>
               <p className="text-xs text-slate-400 flex items-center gap-1">
                 {busLocation ? (
