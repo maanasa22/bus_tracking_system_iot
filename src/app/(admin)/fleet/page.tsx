@@ -78,16 +78,16 @@ export default async function FleetPage() {
                   <td>
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-[#1e293b] flex items-center justify-center border border-slate-700 font-bold text-slate-300">
-                        {bus.numberPlate.substring(0, 2)}
+                        {bus.numberPlate?.substring(0, 2) || "??"}
                       </div>
                       <div>
-                        <div className="font-semibold text-white">{bus.numberPlate}</div>
-                        <div className="text-xs text-muted-foreground">{bus.model} ({bus.year})</div>
+                        <div className="font-semibold text-white">{bus.numberPlate || "Unknown"}</div>
+                        <div className="text-xs text-muted-foreground">{bus.model || "Unknown Model"} ({bus.year || "N/A"})</div>
                       </div>
                     </div>
                   </td>
                   <td>
-                    <span className="text-slate-300">{bus.capacity} seats</span>
+                    <span className="text-slate-300">{bus.capacity || 0} seats</span>
                   </td>
                   <td>
                     {bus.status === "ACTIVE" && <span className="badge badge-success">Active</span>}
@@ -95,12 +95,12 @@ export default async function FleetPage() {
                     {bus.status === "MAINTENANCE" && <span className="badge badge-danger">Maintenance</span>}
                   </td>
                   <td>
-                    {bus.driver ? (
+                    {bus.driver && bus.driver.user ? (
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-[10px] text-white font-bold">
-                          {bus.driver.user.name.charAt(0)}
+                          {bus.driver.user.name?.charAt(0) || "U"}
                         </div>
-                        <span className="text-slate-300">{bus.driver.user.name}</span>
+                        <span className="text-slate-300">{bus.driver.user.name || "Unknown Driver"}</span>
                       </div>
                     ) : (
                       <span className="text-muted-foreground italic text-xs">Unassigned</span>
@@ -117,7 +117,7 @@ export default async function FleetPage() {
                   </td>
                   <td>
                     <span className="text-muted-foreground text-xs">
-                      {formatDistanceToNow(new Date(bus.updatedAt), { addSuffix: true })}
+                      {bus.updatedAt ? formatDistanceToNow(new Date(bus.updatedAt), { addSuffix: true }) : "Never"}
                     </span>
                   </td>
                   <td>
