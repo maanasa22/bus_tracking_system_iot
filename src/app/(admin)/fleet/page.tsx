@@ -10,7 +10,7 @@ export default async function FleetPage() {
   try {
     const rawBuses = await prisma.bus.findMany({
       include: {
-        driver: {
+        drivers: {
           include: { user: true }
         },
         device: true,
