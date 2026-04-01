@@ -1,3 +1,4 @@
+export const dynamic = " force-dynamic;
 import { prisma } from "@/lib/prisma";
 import { Bus, Plus, Search, Filter, MoreVertical, Edit2, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
