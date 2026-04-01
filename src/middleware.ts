@@ -32,11 +32,13 @@ export default auth((req) => {
   }
 
   // Role-based route protection
-  if (pathname.startsWith("/driver") && role !== "DRIVER" && role !== "SUPERADMIN") {
+  const isDriverPortal = pathname === "/driver" || pathname.startsWith("/driver/");
+  if (isDriverPortal && role !== "DRIVER" && role !== "SUPERADMIN") {
     return NextResponse.redirect(new URL("/", baseUrl));
   }
 
-  if (pathname.startsWith("/student") && role !== "STUDENT" && role !== "SUPERADMIN") {
+  const isStudentPortal = pathname === "/student" || pathname.startsWith("/student/");
+  if (isStudentPortal && role !== "STUDENT" && role !== "SUPERADMIN") {
     return NextResponse.redirect(new URL("/", baseUrl));
   }
 
