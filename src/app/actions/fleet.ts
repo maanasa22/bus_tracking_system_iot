@@ -19,19 +19,11 @@ export async function createBus(data: {
       return { error: "Unauthorized access" };
     }
 
-    // Assigning driver: if a driver is picked, ensure they aren't on another bus, or steal them
-    if (data.driverId) {
-      await prisma.bus.updateMany({
-        where: { driverId: data.driverId },
-        data: { driverId: null }
-      });
-    }
-
     // generate a generic unique BUS-XXX ID
     const count = await prisma.bus.count();
     const newBusId = `BUS-${(count + 1).toString().padStart(3, '0')}`;
 
-    await prisma.bus.create({
+    const bus = await prisma.bus.create({
       data: {
         busId: newBusId,
         numberPlate: data.numberPlate,
@@ -39,12 +31,20 @@ export async function createBus(data: {
         year: data.year,
         capacity: data.capacity,
         status: data.status,
-        driverId: data.driverId,
         routeId: data.routeId,
       }
     });
 
+    // Assign the driver if provided
+    if (data.driverId) {
+      await prisma.driver.update({
+        where: { id: data.driverId },
+        data: { busId: bus.id }
+      });
+    }
+
     revalidatePath("/fleet");
+    revalidatePath("/drivers");
     return { success: true };
   } catch (error: any) {
     if (error.code === 'P2002') {
@@ -69,23 +69,6 @@ export async function updateBus(busId: string, data: {
       return { error: "Unauthorized access" };
     }
 
-    // Driver Steal Logic: If the selected driverId is different from the bus's current Driver,
-    // we need to nullify the old bus holding this driver because Prisma 1:1 constraint will throw.
-    if (data.driverId) {
-      // Find what bus currently has this driver, if any
-      const existingBusWithDriver = await prisma.bus.findFirst({
-        where: { driverId: data.driverId }
-      });
-
-      if (existingBusWithDriver && existingBusWithDriver.id !== busId) {
-        // Strip the driver from the other bus
-        await prisma.bus.update({
-          where: { id: existingBusWithDriver.id },
-          data: { driverId: null }
-        });
-      }
-    }
-
     await prisma.bus.update({
       where: { id: busId },
       data: {
@@ -94,12 +77,20 @@ export async function updateBus(busId: string, data: {
         year: data.year,
         capacity: data.capacity,
         status: data.status,
-        driverId: data.driverId,
         routeId: data.routeId
       }
     });
 
+    // Handle driver reassignment (1:N logic)
+    if (data.driverId) {
+      await prisma.driver.update({
+        where: { id: data.driverId },
+        data: { busId: busId }
+      });
+    }
+
     revalidatePath("/fleet");
+    revalidatePath("/drivers");
     return { success: true };
   } catch (error: any) {
     if (error.code === 'P2002') {
@@ -116,16 +107,22 @@ export async function archiveBus(busId: string) {
       return { error: "Unauthorized access" };
     }
 
+    // Disconnect all drivers from this bus
+    await prisma.driver.updateMany({
+      where: { busId: busId },
+      data: { busId: null }
+    });
+
     await prisma.bus.update({
       where: { id: busId },
       data: { 
         status: "OUT_OF_SERVICE",
-        driverId: null, // Safely unassign driver so they can be reused
-        routeId: null // Safely unassign route
+        routeId: null
       }
     });
 
     revalidatePath("/fleet");
+    revalidatePath("/drivers");
     return { success: true };
   } catch (error: any) {
     return { error: error.message || "Failed to archive vehicle" };

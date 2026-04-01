@@ -166,12 +166,16 @@ export function FleetClientInterface({ buses, availableDrivers, availableRoutes 
                         {bus.status === "IDLE" && <span className="badge badge-info">Idle</span>}
                       </td>
                       <td>
-                        {bus.driver && bus.driver.user ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-[10px] text-white font-bold">
-                              {bus.driver.user.name?.charAt(0) || "U"}
-                            </div>
-                            <span className="text-slate-300">{bus.driver.user.name || "Unknown Driver"}</span>
+                        {bus.drivers && bus.drivers.length > 0 ? (
+                          <div className="flex flex-col gap-1">
+                            {bus.drivers.map((d: any) => (
+                              <div key={d.id} className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-[10px] text-white font-bold">
+                                  {d.user?.name?.charAt(0) || "U"}
+                                </div>
+                                <span className="text-slate-300 text-xs">{d.user?.name || "Unknown Driver"}</span>
+                              </div>
+                            ))}
                           </div>
                         ) : (
                           <span className="text-muted-foreground italic text-xs">Unassigned</span>
@@ -272,7 +276,7 @@ export function FleetClientInterface({ buses, availableDrivers, availableRoutes 
 
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-400">Assign Driver</label>
-                <select name="driverId" defaultValue={selectedBus?.driverId || ""} className="input bg-[#111827] border-[#1e293b] w-full">
+                <select name="driverId" defaultValue={selectedBus?.drivers?.[0]?.id || ""} className="input bg-[#111827] border-[#1e293b] w-full">
                   <option value="">-- Unassigned --</option>
                   {availableDrivers.map(d => (
                     <option key={d.id} value={d.id}>{d.user.name} ({d.licenseNo}) {d.bus && d.bus.id !== selectedBus?.id ? '[Currently Assigned]' : ''}</option>
