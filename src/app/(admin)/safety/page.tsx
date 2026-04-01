@@ -1,4 +1,4 @@
-export const dynamic = " force-dynamic;
+export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { ShieldCheck, HardHat, FileText, CheckCircle2, AlertTriangle, Video, Download } from "lucide-react";
 
