@@ -34,8 +34,12 @@ export default async function DriverDashboard() {
     });
   }
 
-  const route = activeSchedule?.route;
-  const assignedBus = route?.buses?.[0];
+  const assignedBus = driverData?.busId ? await prisma.bus.findUnique({
+    where: { id: driverData.busId },
+    include: { route: { include: { stops: { orderBy: { order: "asc" } } } } }
+  }) : null;
+
+  const route = assignedBus?.route || activeSchedule?.route;
 
   // Determine shift status based on current time
   let shiftStatus: "active" | "upcoming" | "off" = "off";

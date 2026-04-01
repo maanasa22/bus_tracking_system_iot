@@ -23,14 +23,19 @@ export default async function DriverLiveRoute() {
     }
   }) : null;
 
-  if (!activeSchedule?.route) {
+  const assignedBus = driverData?.busId ? await prisma.bus.findUnique({
+    where: { id: driverData.busId },
+    include: { route: { include: { stops: { orderBy: { order: "asc" } } } } }
+  }) : null;
+
+  if (!assignedBus?.route) {
     redirect("/driver");
   }
 
-  const route = activeSchedule.route;
-  const targetBusId = route.buses.length > 0 ? route.buses[0].busId : null;
-  const targetBusDbId = route.buses.length > 0 ? route.buses[0].id : null;
-  const targetBusPlate = route.buses.length > 0 ? route.buses[0].numberPlate : null;
+  const route = assignedBus.route;
+  const targetBusId = assignedBus.busId;
+  const targetBusDbId = assignedBus.id;
+  const targetBusPlate = assignedBus.numberPlate;
   const routeColor = route.color || "#6366f1";
 
   // Get real student counts for each stop
