@@ -44,7 +44,8 @@ model Driver {
   licenseNo  String     @unique
   userId     String     @unique
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bus        Bus?
+  busId      String?
+  bus        Bus?       @relation(fields: [busId], references: [id])
   schedules  Schedule[]
   createdAt  DateTime   @default(now())
 }
@@ -79,8 +80,7 @@ model Bus {
   passengers   Int      @default(0)
   routeId      String?
   route        Route?   @relation(fields: [routeId], references: [id])
-  driverId     String?  @unique
-  driver       Driver?  @relation(fields: [driverId], references: [id])
+  drivers      Driver[]
   device       Device?
   trips        Trip[]
   alerts       Alert[]

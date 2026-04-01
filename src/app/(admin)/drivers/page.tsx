@@ -7,7 +7,7 @@ export default async function DriversPage() {
     include: {
       user: true,
       bus: {
-        select: { numberPlate: true, busId: true }
+        include: { route: true }
       },
     },
     orderBy: { user: { name: "asc" } }
@@ -55,6 +55,11 @@ export default async function DriversPage() {
                   }`}>
                     {driver.user.isActive ? "Active" : "Inactive"}
                   </span>
+                  {driver.bus?.route && (
+                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold uppercase tracking-wider text-[10px]">
+                      {driver.bus.route.name}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
