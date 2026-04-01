@@ -19,10 +19,22 @@ export default async function FleetPage() {
       orderBy: { createdAt: "desc" }
     });
 
+    const rawDrivers = await prisma.driver.findMany({
+      include: { user: true },
+      orderBy: { user: { name: "asc" } }
+    });
+
+    const rawRoutes = await prisma.route.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { name: "asc" }
+    });
+
     const replacer = (k: string, v: any) => typeof v === 'bigint' ? v.toString() : v;
     const buses = JSON.parse(JSON.stringify(rawBuses, replacer));
+    const availableDrivers = JSON.parse(JSON.stringify(rawDrivers, replacer));
+    const availableRoutes = JSON.parse(JSON.stringify(rawRoutes, replacer));
 
-    return <FleetClientInterface buses={buses} />;
+    return <FleetClientInterface buses={buses} availableDrivers={availableDrivers} availableRoutes={availableRoutes} />;
   } catch (error: any) {
     return (
       <div className="p-8 space-y-4">
