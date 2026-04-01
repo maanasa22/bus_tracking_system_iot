@@ -130,8 +130,12 @@ export async function GET(req: Request) {
     console.log("Database cleared safely. Injecting real JGI routes...");
     const buses = await prisma.bus.findMany({ 
       take: 5, 
-      orderBy: { busId: "asc" },
-      include: { driver: { include: { user: true } } }
+      orderBy: { busId: "asc" }
+    });
+
+    const drivers = await prisma.driver.findMany({
+      take: 5,
+      include: { user: true }
     });
 
     const realDriverNames = ["Venkatesh R", "Manjunath S", "Shivakumar M", "Gowda K", "Prakash N"];
@@ -174,13 +178,19 @@ export async function GET(req: Request) {
             }
           });
 
-          if (buses[i].driver && buses[i].driver?.user) {
+          if (drivers[i]) {
             await prisma.user.update({
-              where: { id: buses[i].driver!.user.id },
+              where: { id: drivers[i].user.id },
               data: {
                 name: realDriverNames[i],
                 phone: `+91 98765 4321${i}`
               }
+            });
+
+            // Assign driver to this bus
+            await prisma.driver.update({
+              where: { id: drivers[i].id },
+              data: { busId: buses[i].id }
             });
           }
         }
