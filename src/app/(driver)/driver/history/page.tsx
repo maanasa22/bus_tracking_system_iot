@@ -22,7 +22,7 @@ export default async function DriverTripHistoryPage() {
   const trips = await prisma.trip.findMany({
     where: { 
       bus: { 
-        driverId: driverData?.id 
+        drivers: { some: { id: driverData?.id || "" } }
       } 
     },
     include: {
