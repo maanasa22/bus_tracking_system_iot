@@ -128,7 +128,14 @@ export async function GET(req: Request) {
     await prisma.route.deleteMany({});
 
     console.log("Database cleared safely. Injecting real JGI routes...");
-    const buses = await prisma.bus.findMany({ take: 5, orderBy: { busId: "asc" } });
+    const buses = await prisma.bus.findMany({ 
+      take: 5, 
+      orderBy: { busId: "asc" },
+      include: { driver: { include: { user: true } } }
+    });
+
+    const realDriverNames = ["Venkatesh R", "Manjunath S", "Shivakumar M", "Gowda K", "Prakash N"];
+    const realBusPlates = ["KA-01-AF-1234", "KA-51-AB-4321", "KA-04-F-8877", "KA-53-G-1122", "KA-02-D-9900"];
 
     for (let i = 0; i < realRoutes.length; i++) {
         const routeData = realRoutes[i];
@@ -158,8 +165,24 @@ export async function GET(req: Request) {
         if (buses[i]) {
           await prisma.bus.update({
             where: { id: buses[i].id },
-            data: { routeId: createdRoute.id }
+            data: { 
+              routeId: createdRoute.id,
+              numberPlate: realBusPlates[i],
+              model: "Ashok Leyland Falcon",
+              capacity: 60,
+              year: 2022
+            }
           });
+
+          if (buses[i].driver && buses[i].driver?.user) {
+            await prisma.user.update({
+              where: { id: buses[i].driver!.user.id },
+              data: {
+                name: realDriverNames[i],
+                phone: `+91 98765 4321${i}`
+              }
+            });
+          }
         }
     }
 

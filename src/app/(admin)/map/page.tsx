@@ -1,3 +1,4 @@
+export const dynamic = " force-dynamic;
 import { prisma } from "@/lib/prisma";
 import { DynamicLiveMap } from "@/components/map/MapWrapper.client";
 
