@@ -267,9 +267,17 @@ async function main() {
         currentSpeed: b.speed,
         passengers: Math.floor(Math.random() * b.capacity * 0.8),
         routeId: i < createdRoutes.length ? createdRoutes[i].id : createdRoutes[0].id,
-        driverId: i < drivers.length ? drivers[i].id : null,
       },
     });
+
+    // Assign driver to this bus (1:N relationship)
+    if (i < drivers.length) {
+      await prisma.driver.update({
+        where: { id: drivers[i].id },
+        data: { busId: bus.id }
+      });
+    }
+
     createdBuses.push(bus);
   }
 
