@@ -3,6 +3,7 @@
 import { Bus, Plus, Edit2, Trash2, X, AlertTriangle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ClientSearchFilter } from "@/components/ClientSearchFilter";
 import { createBus, updateBus, archiveBus } from "@/app/actions/fleet";
@@ -14,6 +15,7 @@ interface FleetClientInterfaceProps {
 }
 
 export function FleetClientInterface({ buses, availableDrivers, availableRoutes }: FleetClientInterfaceProps) {
+  const router = useRouter();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [deleteBusId, setDeleteBusId] = useState<string | null>(null);
@@ -52,6 +54,7 @@ export function FleetClientInterface({ buses, availableDrivers, availableRoutes 
       setIsSubmitting(false);
     } else {
       resetForm();
+      router.refresh();
     }
   };
 
@@ -76,6 +79,7 @@ export function FleetClientInterface({ buses, availableDrivers, availableRoutes 
       setIsSubmitting(false);
     } else {
       resetForm();
+      router.refresh();
     }
   };
 
