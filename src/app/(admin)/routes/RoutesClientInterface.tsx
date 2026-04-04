@@ -18,8 +18,20 @@ import {
   ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { useState, useRef } from "react";
 import { createRoute, updateRoute, deleteRoute } from "@/app/actions/routes";
+
+// Dynamic import for Leaflet (no SSR)
+const StopMapPicker = dynamic(() => import("./StopMapPicker"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[250px] rounded-lg bg-[#111827] border border-[#1e293b] flex items-center justify-center">
+      <p className="text-slate-500 text-sm">Loading map...</p>
+    </div>
+  ),
+});
 
 // Predefined color palette
 const COLOR_PALETTE = [
@@ -53,6 +65,7 @@ interface RoutesClientInterfaceProps {
 }
 
 export function RoutesClientInterface({ routes }: RoutesClientInterfaceProps) {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -68,6 +81,9 @@ export function RoutesClientInterface({ routes }: RoutesClientInterfaceProps) {
   const [formColor, setFormColor] = useState(COLOR_PALETTE[0]);
   const [formStatus, setFormStatus] = useState("ACTIVE");
   const [formStops, setFormStops] = useState<StopRow[]>([emptyStop(), emptyStop()]);
+
+  // Active stop for map picker (which stop gets the next map click)
+  const [activeStopIndex, setActiveStopIndex] = useState<number | null>(null);
 
   // Drag state
   const dragItem = useRef<number | null>(null);
@@ -86,6 +102,7 @@ export function RoutesClientInterface({ routes }: RoutesClientInterfaceProps) {
     setFormColor(COLOR_PALETTE[0]);
     setFormStatus("ACTIVE");
     setFormStops([emptyStop(), emptyStop()]);
+    setActiveStopIndex(null);
   };
 
   const openEditModal = (route: any) => {
@@ -188,6 +205,7 @@ export function RoutesClientInterface({ routes }: RoutesClientInterfaceProps) {
       setIsSubmitting(false);
     } else {
       resetForm();
+      router.refresh(); // Force client cache clear
     }
   };
 
@@ -201,6 +219,7 @@ export function RoutesClientInterface({ routes }: RoutesClientInterfaceProps) {
       setIsSubmitting(false);
     } else {
       resetForm();
+      router.refresh();
     }
   };
 
@@ -454,6 +473,51 @@ export function RoutesClientInterface({ routes }: RoutesClientInterfaceProps) {
                 </div>
               </div>
 
+              {/* Map Picker */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Map className="w-3.5 h-3.5" />
+                    Map Picker
+                  </label>
+                  <span className="text-[10px] text-slate-500">
+                    {activeStopIndex !== null
+                      ? `Click map to set coords for Stop #${activeStopIndex + 1}`
+                      : "Select a stop row below, then click on the map"}
+                  </span>
+                </div>
+                <StopMapPicker
+                  stops={formStops.map((s, i) => ({
+                    index: i,
+                    name: s.name,
+                    lat: parseFloat(s.lat) || 0,
+                    lng: parseFloat(s.lng) || 0,
+                  }))}
+                  activeStopIndex={activeStopIndex}
+                  onMapClick={(lat, lng) => {
+                    // If a stop row is selected, fill that row; otherwise fill the first empty one
+                    let targetIndex = activeStopIndex;
+                    if (targetIndex === null) {
+                      targetIndex = formStops.findIndex((s) => !s.lat || !s.lng);
+                    }
+                    if (targetIndex === null || targetIndex === -1) return;
+                    setFormStops((prev) =>
+                      prev.map((stop, i) =>
+                        i === targetIndex
+                          ? { ...stop, lat: lat.toFixed(4), lng: lng.toFixed(4) }
+                          : stop
+                      )
+                    );
+                    // Auto-advance to next empty stop
+                    const nextEmpty = formStops.findIndex(
+                      (s, i) => i > targetIndex! && (!s.lat || !s.lng)
+                    );
+                    setActiveStopIndex(nextEmpty !== -1 ? nextEmpty : null);
+                  }}
+                  routeColor={formColor}
+                />
+              </div>
+
               {/* Dynamic Stop Builder */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -480,7 +544,10 @@ export function RoutesClientInterface({ routes }: RoutesClientInterfaceProps) {
                       onDragEnter={() => handleDragEnter(index)}
                       onDragEnd={handleDragEnd}
                       onDragOver={(e) => e.preventDefault()}
-                      className="flex items-center gap-2 bg-[#111827] border border-[#1e293b] rounded-lg p-2.5 group/stop cursor-move hover:border-primary/30 transition-colors"
+                      onClick={() => setActiveStopIndex(index)}
+                      className={`flex items-center gap-2 bg-[#111827] border rounded-lg p-2.5 group/stop cursor-move transition-colors ${
+                        activeStopIndex === index ? "border-primary/60 bg-primary/5" : "border-[#1e293b] hover:border-primary/30"
+                      }`}
                     >
                       {/* Drag handle */}
                       <div className="flex flex-col items-center shrink-0 text-slate-600 group-hover/stop:text-slate-400 transition-colors">
@@ -548,7 +615,7 @@ export function RoutesClientInterface({ routes }: RoutesClientInterfaceProps) {
                     </div>
                   ))}
                 </div>
-                <p className="text-[10px] text-slate-500">Drag stops to reorder. Minimum 2 stops required.</p>
+                <p className="text-[10px] text-slate-500">Click a stop row to select it, then click the map to set coordinates. Drag to reorder. Min 2 stops.</p>
               </div>
             </div>
 

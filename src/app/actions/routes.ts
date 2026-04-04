@@ -51,7 +51,9 @@ export async function createRoute(data: {
 
     revalidatePath("/routes");
     revalidatePath("/fleet");
+    revalidatePath("/drivers");
     revalidatePath("/map");
+    revalidatePath("/", "layout");
     return { success: true, routeId: route.id };
   } catch (error: any) {
     if (error.code === "P2002") {
@@ -110,7 +112,9 @@ export async function updateRoute(
 
     revalidatePath("/routes");
     revalidatePath("/fleet");
+    revalidatePath("/drivers");
     revalidatePath("/map");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch (error: any) {
     return { error: error.message || "Failed to update route" };
@@ -158,8 +162,9 @@ export async function deleteRoute(routeId: string) {
 
     revalidatePath("/routes");
     revalidatePath("/fleet");
-    revalidatePath("/map");
     revalidatePath("/drivers");
+    revalidatePath("/map");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch (error: any) {
     return { error: error.message || "Failed to delete route" };

@@ -45,6 +45,9 @@ export async function createBus(data: {
 
     revalidatePath("/fleet");
     revalidatePath("/drivers");
+    revalidatePath("/routes");
+    revalidatePath("/map");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch (error: any) {
     if (error.code === 'P2002') {
@@ -91,6 +94,9 @@ export async function updateBus(busId: string, data: {
 
     revalidatePath("/fleet");
     revalidatePath("/drivers");
+    revalidatePath("/routes");
+    revalidatePath("/map");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch (error: any) {
     if (error.code === 'P2002') {
@@ -123,6 +129,9 @@ export async function archiveBus(busId: string) {
 
     revalidatePath("/fleet");
     revalidatePath("/drivers");
+    revalidatePath("/routes");
+    revalidatePath("/map");
+    revalidatePath("/", "layout");
     return { success: true };
   } catch (error: any) {
     return { error: error.message || "Failed to archive vehicle" };
