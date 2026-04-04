@@ -15,7 +15,7 @@ model User {
   name          String
   email         String    @unique
   passwordHash  String
-  role          String    @default("STUDENT") // SUPER_ADMIN, ADMIN, DRIVER, STUDENT
+  role          String    @default("STUDENT") // SUPERADMIN, ADMIN, DRIVER, STUDENT
   avatar        String?
   phone         String?
   isActive      Boolean   @default(true)
