@@ -138,7 +138,7 @@ async function main() {
   });
 
   const superAdmin = await prisma.user.create({
-    data: { name: "Dr. Srinivas Kumar", email: "super@tracyg.in", passwordHash: hash("super123"), role: "SUPER_ADMIN", phone: "+91 9876543200" }
+    data: { name: "Dr. Srinivas Kumar", email: "super@tracyg.in", passwordHash: hash("super123"), role: "SUPERADMIN", phone: "+91 9876543200" }
   });
 
   // 3. Create 7 Drivers (5 Assigned, 2 Unassigned)
@@ -153,7 +153,7 @@ async function main() {
   }));
 
   // 4. Create 5 Routes & Stops
-  const createdRoutes = [];
+  const createdRoutes: any[] = [];
   for (const r of realRoutes) {
     const route = await prisma.route.create({
       data: { name: r.name, description: r.description, color: r.color, distance: r.stops.length * 2.5, duration: r.stops.length * 6, status: "ACTIVE" }
