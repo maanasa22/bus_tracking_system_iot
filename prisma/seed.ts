@@ -7,10 +7,118 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool as any);
 const prisma = new PrismaClient({ adapter });
 
-async function main() {
-  console.log("🌱 Seeding database...");
+const realRoutes = [
+  {
+    name: "Route 1 - Hebbal Flyover",
+    description: "Hebbal Flyover Under Pass",
+    color: "#6366f1",
+    stops: [
+      { name: "Hebbal Fly Over", lat: 13.0400, lng: 77.5900 },
+      { name: "CBI road", lat: 13.0265, lng: 77.5876 },
+      { name: "Mekhri Circle", lat: 13.0203, lng: 77.5837 },
+      { name: "Freedom Park", lat: 12.9774, lng: 77.5821 },
+      { name: "Corporation Circle", lat: 12.9672, lng: 77.5877 },
+      { name: "Lalbagh Main Gate", lat: 12.9541, lng: 77.5846 },
+      { name: "RV Road", lat: 12.9402, lng: 77.5801 },
+      { name: "Yediyur", lat: 12.9301, lng: 77.5763 },
+      { name: "Banashankari Bus Stand", lat: 12.9179, lng: 77.5738 },
+      { name: "JP Nagar Signal", lat: 12.9079, lng: 77.5756 },
+      { name: "Yelachenahalli", lat: 12.9006, lng: 77.5692 },
+      { name: "Jain Global Campus", lat: 12.6366, lng: 77.4243 }
+    ]
+  },
+  {
+    name: "Route 2 - Mysore Circle",
+    description: "Mysore Circle to JGI",
+    color: "#10b981",
+    stops: [
+      { name: "Chamarajpet", lat: 12.9577, lng: 77.5665 },
+      { name: "Nandini Layout", lat: 13.0125, lng: 77.5333 },
+      { name: "Ramakrishna Ashram", lat: 12.9431, lng: 77.5684 },
+      { name: "Hanumanthanagar", lat: 12.9427, lng: 77.5583 },
+      { name: "PES College", lat: 12.9415, lng: 77.5543 },
+      { name: "Muneshwara Block", lat: 12.9503, lng: 77.5469 },
+      { name: "Srinagar", lat: 12.9484, lng: 77.5514 },
+      { name: "Sita Circle", lat: 12.9379, lng: 77.5497 },
+      { name: "Bank Colony", lat: 13.0706, lng: 77.5659 },
+      { name: "Vidyapeeta Circle", lat: 12.9354, lng: 77.5583 },
+      { name: "Kathriguppe Signal", lat: 12.9234, lng: 77.5489 },
+      { name: "Kadirenahalli", lat: 12.9175, lng: 77.5611 },
+      { name: "Chikkalasandra", lat: 12.9121, lng: 77.5476 },
+      { name: "Uttarahalli", lat: 12.9055, lng: 77.5455 },
+      { name: "Gubbalala", lat: 12.8856, lng: 77.5416 },
+      { name: "KSIT Signal", lat: 12.8792, lng: 77.5446 },
+      { name: "Jnana Sweekar School", lat: 12.8718, lng: 77.5332 },
+      { name: "Jain Global Campus", lat: 12.6366, lng: 77.4243 }
+    ]
+  },
+  {
+    name: "Route 3 - Veerabhadhra Nagara",
+    description: "Veerabhadhra Nagara to JGI",
+    color: "#f59e0b",
+    stops: [
+      { name: "Veerabhadhra Nagar", lat: 12.9351, lng: 77.5456 },
+      { name: "Hosakerehalli Petrol Bunk", lat: 12.9328, lng: 77.5403 },
+      { name: "Kamakhya Theater", lat: 12.9238, lng: 77.5478 },
+      { name: "Sagar Hospital", lat: 12.9078, lng: 77.5651 },
+      { name: "Kumaraswamy Layout", lat: 12.9150, lng: 77.5678 },
+      { name: "ISRO Layout", lat: 12.8974, lng: 77.5573 },
+      { name: "Doddakallasandra", lat: 12.8857, lng: 77.5557 },
+      { name: "Talaghattapura", lat: 12.8718, lng: 77.5332 },
+      { name: "Silk Institute Metro", lat: 12.8610, lng: 77.5297 },
+      { name: "Agara Cross", lat: 12.8491, lng: 77.5220 },
+      { name: "Kaggalipura", lat: 12.8089, lng: 77.5097 },
+      { name: "Jain Global Campus", lat: 12.6366, lng: 77.4243 }
+    ]
+  },
+  {
+    name: "Route 4 - Yelahanka",
+    description: "Yelahanka Mother Dairy",
+    color: "#ec4899",
+    stops: [
+      { name: "Mother Dairy Yelahanka", lat: 13.0959, lng: 77.5732 },
+      { name: "MS Palya", lat: 13.0816, lng: 77.5482 },
+      { name: "Gangamma Circle", lat: 13.0563, lng: 77.5463 },
+      { name: "Jalahalli Circle", lat: 13.0559, lng: 77.5578 },
+      { name: "Kanteerava Studio", lat: 13.0194, lng: 77.5331 },
+      { name: "Laggere Bridge", lat: 13.0084, lng: 77.5266 },
+      { name: "Kottigepalya", lat: 12.9845, lng: 77.5118 },
+      { name: "Dr. Ambedkar Institute", lat: 12.9645, lng: 77.5065 },
+      { name: "Mariyappana Palya", lat: 13.0500, lng: 77.6118 },
+      { name: "RR Medical College", lat: 12.9623, lng: 77.5736 },
+      { name: "Bidadi Cross", lat: 12.8668, lng: 77.4538 },
+      { name: "Jain Global Campus", lat: 12.6366, lng: 77.4243 }
+    ]
+  },
+  {
+    name: "Route 5 - BEL Circle",
+    description: "BEL Circle to JGI",
+    color: "#3b82f6",
+    stops: [
+      { name: "BEL Circle", lat: 13.0455, lng: 77.5564 },
+      { name: "Dollars Colony", lat: 13.0334, lng: 77.5756 },
+      { name: "IISc", lat: 13.0222, lng: 77.5671 },
+      { name: "Malleswaram 18th Cross", lat: 13.0088, lng: 77.5689 },
+      { name: "Devaiah Park", lat: 12.9964, lng: 77.5630 },
+      { name: "Navarang Theater", lat: 12.9922, lng: 77.5529 },
+      { name: "Magadi Road Tollgate", lat: 12.9737, lng: 77.5498 },
+      { name: "Vijayanagar Bus Stop", lat: 12.9731, lng: 77.5381 },
+      { name: "Chandra Layout", lat: 12.9553, lng: 77.5238 },
+      { name: "Nagarbhavi Circle", lat: 12.9580, lng: 77.5189 },
+      { name: "Nayandahalli", lat: 12.9413, lng: 77.5212 },
+      { name: "Rajarajeshwari Nagar Gate", lat: 12.9304, lng: 77.5186 },
+      { name: "SBI RR Nagar", lat: 12.9281, lng: 77.5192 },
+      { name: "Jain Global Campus", lat: 12.6366, lng: 77.4243 }
+    ]
+  }
+];
 
-  // Clean existing data
+async function main() {
+  console.log("🌱 Seeding database with 5+2 state...");
+
+  const hash = (pw: string) => bcrypt.hashSync(pw, 10);
+
+  // 1. Clean existing data
   await prisma.stopRequest.deleteMany();
   await prisma.alert.deleteMany();
   await prisma.trip.deleteMany();
@@ -24,392 +132,86 @@ async function main() {
   await prisma.session.deleteMany();
   await prisma.user.deleteMany();
 
-  const hash = (pw: string) => bcrypt.hashSync(pw, 10);
-
-  // ============================================
-  // USERS
-  // ============================================
-  const adminUser = await prisma.user.create({
-    data: {
-      name: "Yash Raj",
-      email: "admin@tracyg.in",
-      passwordHash: hash("admin123"),
-      role: "ADMIN",
-      phone: "+91 9876543210",
-    },
+  // 2. Create Base Users
+  const admin = await prisma.user.create({
+    data: { name: "Yash Raj", email: "admin@tracyg.in", passwordHash: hash("admin123"), role: "ADMIN", phone: "+91 9876543210" }
   });
 
   const superAdmin = await prisma.user.create({
-    data: {
-      name: "Dr. Srinivas Kumar",
-      email: "super@tracyg.in",
-      passwordHash: hash("super123"),
-      role: "SUPER_ADMIN",
-      phone: "+91 9876543200",
-    },
+    data: { name: "Dr. Srinivas Kumar", email: "super@tracyg.in", passwordHash: hash("super123"), role: "SUPER_ADMIN", phone: "+91 9876543200" }
   });
 
-  // Driver users
-  const driverUsers = await Promise.all([
-    prisma.user.create({ data: { name: "Ramesh Gowda", email: "ramesh@tracyg.in", passwordHash: hash("driver123"), role: "DRIVER", phone: "+91 9876000001" } }),
-    prisma.user.create({ data: { name: "Suresh Patil", email: "suresh@tracyg.in", passwordHash: hash("driver123"), role: "DRIVER", phone: "+91 9876000002" } }),
-    prisma.user.create({ data: { name: "Venkat Rao", email: "venkat@tracyg.in", passwordHash: hash("driver123"), role: "DRIVER", phone: "+91 9876000003" } }),
-    prisma.user.create({ data: { name: "Prakash Shetty", email: "prakash@tracyg.in", passwordHash: hash("driver123"), role: "DRIVER", phone: "+91 9876000004" } }),
-    prisma.user.create({ data: { name: "Mahesh Kumar", email: "mahesh@tracyg.in", passwordHash: hash("driver123"), role: "DRIVER", phone: "+91 9876000005" } }),
-    prisma.user.create({ data: { name: "Ravi Shankar", email: "ravi@tracyg.in", passwordHash: hash("driver123"), role: "DRIVER", phone: "+91 9876000006" } }),
-    prisma.user.create({ data: { name: "Anil Kumble", email: "anil@tracyg.in", passwordHash: hash("driver123"), role: "DRIVER", phone: "+91 9876000007" } }),
-    prisma.user.create({ data: { name: "Deepak Nair", email: "deepak@tracyg.in", passwordHash: hash("driver123"), role: "DRIVER", phone: "+91 9876000008" } }),
-  ]);
+  // 3. Create 7 Drivers (5 Assigned, 2 Unassigned)
+  const driverNames = ["Venkatesh R", "Manjunath S", "Shivakumar M", "Gowda K", "Prakash N", "Anil Kumble", "Deepak Nair"];
+  const driverProfiles = await Promise.all(driverNames.map(async (name, i) => {
+    const user = await prisma.user.create({
+      data: { name, email: `${name.toLowerCase().replace(" ", "")}@tracyg.in`, passwordHash: hash("driver123"), role: "DRIVER", phone: `+91 987600000${i+1}` }
+    });
+    return prisma.driver.create({
+      data: { userId: user.id, licenseNo: `KA01DL2024${1000 + i}` }
+    });
+  }));
 
-  // Student users
-  const studentUsers = await Promise.all([
-    prisma.user.create({ data: { name: "Arjun Maheshwari", email: "arjun@student.edu", passwordHash: hash("student123"), role: "STUDENT" } }),
-    prisma.user.create({ data: { name: "Sneha Reddy", email: "sneha@student.edu", passwordHash: hash("student123"), role: "STUDENT" } }),
-    prisma.user.create({ data: { name: "Karthik Verma", email: "karthik@student.edu", passwordHash: hash("student123"), role: "STUDENT" } }),
-    prisma.user.create({ data: { name: "Pooja Singh", email: "pooja@student.edu", passwordHash: hash("student123"), role: "STUDENT" } }),
-    prisma.user.create({ data: { name: "Rahul Desai", email: "rahul@student.edu", passwordHash: hash("student123"), role: "STUDENT" } }),
-    prisma.user.create({ data: { name: "Divya Krishnan", email: "divya@student.edu", passwordHash: hash("student123"), role: "STUDENT" } }),
-    prisma.user.create({ data: { name: "Amit Joshi", email: "amit@student.edu", passwordHash: hash("student123"), role: "STUDENT" } }),
-    prisma.user.create({ data: { name: "Priya Nair", email: "priya@student.edu", passwordHash: hash("student123"), role: "STUDENT" } }),
-    prisma.user.create({ data: { name: "Vikram Bhat", email: "vikram@student.edu", passwordHash: hash("student123"), role: "STUDENT" } }),
-    prisma.user.create({ data: { name: "Meera Iyer", email: "meera@student.edu", passwordHash: hash("student123"), role: "STUDENT" } }),
-  ]);
-
-  // ============================================
-  // DRIVER PROFILES
-  // ============================================
-  const drivers = await Promise.all(
-    driverUsers.map((u, i) =>
-      prisma.driver.create({
-        data: {
-          licenseNo: `KA${String(i + 1).padStart(2, "0")}DL${String(2020 + i).slice(-4)}${String(1000 + i * 111)}`,
-          userId: u.id,
-        },
-      })
-    )
-  );
-
-  // ============================================
-  // ROUTES & STOPS (Real Bangalore coordinates)
-  // ============================================
-  const routesData = [
-    {
-      name: "Route A",
-      description: "North Campus Express",
-      color: "#6366f1",
-      distance: 18.5,
-      duration: 75,
-      stops: [
-        { name: "Majestic Bus Stand", lat: 12.9770, lng: 77.5710, order: 1 },
-        { name: "Rajajinagar 1st Block", lat: 12.9755, lng: 77.5680, order: 2 },
-        { name: "Basaveshwara Nagar", lat: 12.9740, lng: 77.5660, order: 3 },
-        { name: "Vijayanagar Circle", lat: 12.9730, lng: 77.5700, order: 4 },
-        { name: "RPC Layout", lat: 12.9720, lng: 77.5720, order: 5 },
-        { name: "Mahalakshmi Layout", lat: 12.9700, lng: 77.5760, order: 6 },
-        { name: "Nandini Layout", lat: 12.9680, lng: 77.5800, order: 7 },
-        { name: "Yeswanthpur Circle", lat: 12.9665, lng: 77.5840, order: 8 },
-        { name: "Yeswanthpur Station", lat: 12.9650, lng: 77.5870, order: 9 },
-        { name: "Malleshwaram 18th Cross", lat: 12.9635, lng: 77.5910, order: 10 },
-        { name: "Sadashivanagar", lat: 12.9620, lng: 77.5950, order: 11 },
-        { name: "North Campus Gate", lat: 12.9610, lng: 77.5990, order: 12 },
-      ],
-    },
-    {
-      name: "Route B",
-      description: "South Campus Link",
-      color: "#10b981",
-      distance: 22.3,
-      duration: 85,
-      stops: [
-        { name: "Silk Board Junction", lat: 12.9177, lng: 77.6233, order: 1 },
-        { name: "BTM Layout", lat: 12.9166, lng: 77.6101, order: 2 },
-        { name: "Jayanagar 4th Block", lat: 12.9250, lng: 77.5938, order: 3 },
-        { name: "Lalbagh Gate", lat: 12.9507, lng: 77.5848, order: 4 },
-        { name: "KR Market", lat: 12.9631, lng: 77.5754, order: 5 },
-        { name: "Vidhana Soudha", lat: 12.9796, lng: 77.5907, order: 6 },
-        { name: "Cubbon Park", lat: 12.9763, lng: 77.5929, order: 7 },
-        { name: "MG Road Metro", lat: 12.9756, lng: 77.6057, order: 8 },
-        { name: "Trinity Circle", lat: 12.9725, lng: 77.6194, order: 9 },
-        { name: "South Campus Gate", lat: 12.9680, lng: 77.6250, order: 10 },
-      ],
-    },
-    {
-      name: "Route C",
-      description: "East Wing Shuttle",
-      color: "#f59e0b",
-      distance: 15.8,
-      duration: 60,
-      stops: [
-        { name: "Whitefield Main Road", lat: 12.9698, lng: 77.7500, order: 1 },
-        { name: "ITPL Gate", lat: 12.9854, lng: 77.7401, order: 2 },
-        { name: "Marathahalli Bridge", lat: 12.9591, lng: 77.7010, order: 3 },
-        { name: "HAL Airport Road", lat: 12.9580, lng: 77.6680, order: 4 },
-        { name: "Indiranagar 100ft", lat: 12.9784, lng: 77.6408, order: 5 },
-        { name: "Ulsoor Lake", lat: 12.9826, lng: 77.6200, order: 6 },
-        { name: "East Campus Gate", lat: 12.9800, lng: 77.6100, order: 7 },
-      ],
-    },
-    {
-      name: "Route D",
-      description: "Hostel Pickup",
-      color: "#ef4444",
-      distance: 12.1,
-      duration: 45,
-      stops: [
-        { name: "Hostel Block A", lat: 12.9350, lng: 77.5350, order: 1 },
-        { name: "Hostel Block B", lat: 12.9370, lng: 77.5370, order: 2 },
-        { name: "Kengeri Main Road", lat: 12.9120, lng: 77.4850, order: 3 },
-        { name: "RR Nagar", lat: 12.9260, lng: 77.5109, order: 4 },
-        { name: "Mysore Road Junction", lat: 12.9400, lng: 77.5450, order: 5 },
-        { name: "BSK 3rd Stage", lat: 12.9253, lng: 77.5579, order: 6 },
-        { name: "Banashankari Metro", lat: 12.9250, lng: 77.5730, order: 7 },
-        { name: "Main Campus Gate", lat: 12.9350, lng: 77.5800, order: 8 },
-      ],
-    },
-    {
-      name: "Route E",
-      description: "Electronic City Express",
-      color: "#06b6d4",
-      distance: 28.5,
-      duration: 100,
-      stops: [
-        { name: "Electronic City Phase 1", lat: 12.8456, lng: 77.6603, order: 1 },
-        { name: "Bommanahalli", lat: 12.8996, lng: 77.6230, order: 2 },
-        { name: "HSR Layout", lat: 12.9116, lng: 77.6381, order: 3 },
-        { name: "Koramangala", lat: 12.9352, lng: 77.6245, order: 4 },
-        { name: "Domlur", lat: 12.9615, lng: 77.6388, order: 5 },
-        { name: "Campus East Wing", lat: 12.9750, lng: 77.6100, order: 6 },
-      ],
-    },
-    {
-      name: "Route F",
-      description: "Airport Connector",
-      color: "#8b5cf6",
-      distance: 35.0,
-      duration: 120,
-      stops: [
-        { name: "KIA Terminal", lat: 13.1989, lng: 77.7068, order: 1 },
-        { name: "Yelahanka", lat: 13.1007, lng: 77.5963, order: 2 },
-        { name: "Hebbal Flyover", lat: 13.0358, lng: 77.5970, order: 3 },
-        { name: "Mekhri Circle", lat: 13.0095, lng: 77.5880, order: 4 },
-        { name: "Yeshwanthpur", lat: 12.9982, lng: 77.5530, order: 5 },
-        { name: "Campus Main Gate", lat: 12.9800, lng: 77.5700, order: 6 },
-      ],
-    },
-  ];
-
-  const createdRoutes: any[] = [];
-  const allStops: Array<{ id: string; routeId: string }> = [];
-
-  for (const r of routesData) {
+  // 4. Create 5 Routes & Stops
+  const createdRoutes = [];
+  for (const r of realRoutes) {
     const route = await prisma.route.create({
-      data: {
-        name: r.name,
-        description: r.description,
-        color: r.color,
-        distance: r.distance,
-        duration: r.duration,
-      },
+      data: { name: r.name, description: r.description, color: r.color, distance: r.stops.length * 2.5, duration: r.stops.length * 6, status: "ACTIVE" }
     });
     createdRoutes.push(route);
-
-    for (const s of r.stops) {
-      const stop = await prisma.stop.create({
-        data: { name: s.name, lat: s.lat, lng: s.lng, order: s.order, routeId: route.id },
-      });
-      allStops.push({ id: stop.id, routeId: route.id });
-    }
+    await Promise.all(r.stops.map((s, idx) => 
+      prisma.stop.create({ data: { name: s.name, lat: s.lat, lng: s.lng, order: idx + 1, routeId: route.id } })
+    ));
   }
 
-  // ============================================
-  // STUDENT PROFILES (assign to stops)
-  // ============================================
-  const stopsForRoute0 = allStops.filter((s) => s.routeId === createdRoutes[0].id);
-  await Promise.all(
-    studentUsers.map((u, i) =>
-      prisma.student.create({
-        data: {
-          rollNo: `CS21B${String(45 + i).padStart(3, "0")}`,
-          userId: u.id,
-          stopId: stopsForRoute0[i % stopsForRoute0.length]?.id,
-        },
-      })
-    )
-  );
-
-  // ============================================
-  // BUSES (8 buses assigned to routes & drivers)
-  // ============================================
-  const busesData = [
-    { busId: "BUS-001", numberPlate: "KA-01-AB-1234", capacity: 52, model: "Tata Starbus", year: 2022, status: "ACTIVE", lat: 12.972, lng: 77.574, speed: 32 },
-    { busId: "BUS-002", numberPlate: "KA-01-CD-5678", capacity: 48, model: "Ashok Leyland", year: 2023, status: "ACTIVE", lat: 12.935, lng: 77.610, speed: 28 },
-    { busId: "BUS-003", numberPlate: "KA-01-EF-9012", capacity: 52, model: "Tata Starbus", year: 2021, status: "DELAYED", lat: 12.969, lng: 77.741, speed: 15 },
-    { busId: "BUS-004", numberPlate: "KA-01-GH-3456", capacity: 40, model: "Eicher 10.75H", year: 2022, status: "ACTIVE", lat: 12.930, lng: 77.540, speed: 45 },
-    { busId: "BUS-005", numberPlate: "KA-01-IJ-7890", capacity: 52, model: "Ashok Leyland", year: 2023, status: "ACTIVE", lat: 12.886, lng: 77.654, speed: 38 },
-    { busId: "BUS-006", numberPlate: "KA-01-KL-2345", capacity: 48, model: "Tata Starbus", year: 2020, status: "MAINTENANCE", lat: null, lng: null, speed: 0 },
-    { busId: "BUS-007", numberPlate: "KA-01-MN-6789", capacity: 40, model: "Eicher 10.75H", year: 2022, status: "IDLE", lat: 12.978, lng: 77.570, speed: 0 },
-    { busId: "BUS-008", numberPlate: "KA-01-OP-0123", capacity: 52, model: "Tata Starbus", year: 2024, status: "ACTIVE", lat: 13.100, lng: 77.596, speed: 55 },
-  ];
-
-  const createdBuses = [];
-  for (let i = 0; i < busesData.length; i++) {
-    const b = busesData[i];
-    const bus = await prisma.bus.create({
+  // 5. Create 7 Buses (5 Active on Routes, 2 Inactive/Unlinked)
+  const busPlates = ["KA-01-AF-1234", "KA-51-AB-4321", "KA-04-F-8877", "KA-53-G-1122", "KA-02-D-9900", "KA-01-EX-9999", "KA-01-EX-8888"];
+  const createdBuses = await Promise.all(busPlates.map(async (plate, i) => {
+    return prisma.bus.create({
       data: {
-        busId: b.busId,
-        numberPlate: b.numberPlate,
-        capacity: b.capacity,
-        model: b.model,
-        year: b.year,
-        status: b.status,
-        currentLat: b.lat,
-        currentLng: b.lng,
-        currentSpeed: b.speed,
-        passengers: Math.floor(Math.random() * b.capacity * 0.8),
-        routeId: i < createdRoutes.length ? createdRoutes[i].id : createdRoutes[0].id,
-      },
+        busId: `BUS-00${i+1}`,
+        numberPlate: plate,
+        status: i < 5 ? "ACTIVE" : "IDLE",
+        routeId: i < 5 ? createdRoutes[i].id : null,
+        capacity: 60,
+        model: "Ashok Leyland Falcon",
+        year: 2022,
+        currentLat: i < 5 ? realRoutes[i].stops[0].lat : null,
+        currentLng: i < 5 ? realRoutes[i].stops[0].lng : null
+      }
     });
+  }));
 
-    // Assign driver to this bus (1:N relationship)
-    if (i < drivers.length) {
-      await prisma.driver.update({
-        where: { id: drivers[i].id },
-        data: { busId: bus.id }
-      });
-    }
-
-    createdBuses.push(bus);
-  }
-
-  // ============================================
-  // DEVICES
-  // ============================================
-  for (let i = 0; i < createdBuses.length; i++) {
-    await prisma.device.create({
-      data: {
-        deviceId: `DEV-${String(i + 1).padStart(3, "0")}`,
-        busId: createdBuses[i].id,
-        firmware: i < 4 ? "v2.4.1" : "v2.3.8",
-        status: busesData[i].status === "MAINTENANCE" ? "OFFLINE" : busesData[i].status === "ACTIVE" ? "ONLINE" : "OFFLINE",
-        battery: 60 + Math.random() * 40,
-        signal: Math.floor(Math.random() * 5),
-        lastPing: busesData[i].status === "ACTIVE" ? new Date() : new Date(Date.now() - 3600000),
-        uptime: 85 + Math.random() * 15,
-      },
+  // 6. Link 5 Drivers to the 5 Active Buses
+  for (let i = 0; i < 5; i++) {
+    await prisma.driver.update({
+      where: { id: driverProfiles[i].id },
+      data: { busId: createdBuses[i].id }
     });
   }
 
-  // ============================================
-  // TRIPS (recent)
-  // ============================================
-  const now = new Date();
-  for (let day = 0; day < 7; day++) {
-    for (let i = 0; i < Math.min(6, createdBuses.length); i++) {
-      const tripDate = new Date(now);
-      tripDate.setDate(tripDate.getDate() - day);
-      tripDate.setHours(6, 30, 0, 0);
+  // 7. Create some students & schedules for Route 1
+  const route1Stops = await prisma.stop.findMany({ where: { routeId: createdRoutes[0].id } });
+  const students = ["Arjun M", "Sneha R", "Karthik V", "Pooja S", "Rahul D"];
+  await Promise.all(students.map(async (name, i) => {
+    const user = await prisma.user.create({ data: { name, email: `${name.toLowerCase().replace(" ", "")}.std@jgi.edu`, passwordHash: hash("student123"), role: "STUDENT" } });
+    return prisma.student.create({ data: { userId: user.id, rollNo: `CS${2100+i}`, stopId: route1Stops[i % route1Stops.length].id } });
+  }));
 
-      const endDate = new Date(tripDate);
-      endDate.setMinutes(endDate.getMinutes() + 60 + Math.floor(Math.random() * 30));
-
-      await prisma.trip.create({
-        data: {
-          busId: createdBuses[i].id,
-          routeId: i < createdRoutes.length ? createdRoutes[i].id : createdRoutes[0].id,
-          startTime: tripDate,
-          endTime: day === 0 && i < 3 ? null : endDate,
-          status: day === 0 && i < 3 ? "IN_PROGRESS" : "COMPLETED",
-          passengers: 20 + Math.floor(Math.random() * 30),
-          distance: routesData[i % routesData.length].distance,
-          onTime: Math.random() > 0.2,
-        },
-      });
-    }
-  }
-
-  // ============================================
-  // ALERTS
-  // ============================================
-  const alertsData = [
-    { type: "SPEED", severity: "WARNING", title: "Speed limit exceeded", message: "BUS-008 exceeded 50 km/h near Hebbal Flyover", busIdx: 7 },
-    { type: "DEVICE", severity: "CRITICAL", title: "Device offline", message: "DEV-006 lost connection — BUS-006 in maintenance bay", busIdx: 5 },
-    { type: "GEOFENCE", severity: "INFO", title: "Campus entry", message: "BUS-001 entered North Campus perimeter", busIdx: 0 },
-    { type: "ROUTE", severity: "WARNING", title: "Route deviation", message: "BUS-003 deviated from Route C near Marathahalli", busIdx: 2 },
-    { type: "MAINTENANCE", severity: "INFO", title: "Service due", message: "BUS-006 scheduled for 15,000 km service", busIdx: 5 },
-    { type: "SOS", severity: "CRITICAL", title: "Emergency alert", message: "SOS triggered by driver on BUS-004 near Mysore Road", busIdx: 3 },
-    { type: "DEVICE", severity: "WARNING", title: "Low battery", message: "DEV-003 battery at 18% — charge recommended", busIdx: 2 },
-    { type: "GEOFENCE", severity: "SUCCESS", title: "Route completed", message: "BUS-002 completed Route B — all stops covered", busIdx: 1 },
-    { type: "SPEED", severity: "INFO", title: "Speed normal", message: "BUS-005 operating within safe speed limits", busIdx: 4 },
-    { type: "ROUTE", severity: "WARNING", title: "Delay detected", message: "BUS-003 running 12 min behind schedule on Route C", busIdx: 2 },
-  ];
-
-  for (let i = 0; i < alertsData.length; i++) {
-    const a = alertsData[i];
-    const created = new Date(now);
-    created.setMinutes(created.getMinutes() - i * 15);
-    await prisma.alert.create({
-      data: {
-        type: a.type,
-        severity: a.severity,
-        title: a.title,
-        message: a.message,
-        busId: createdBuses[a.busIdx]?.id,
-        createdAt: created,
-      },
-    });
-  }
-
-  // ============================================
-  // SCHEDULES
-  // ============================================
-  for (let i = 0; i < Math.min(6, createdRoutes.length); i++) {
+  // 8. Create Morning/Evening Schedules for the 5 active routes
+  for (let i = 0; i < 5; i++) {
     for (let day = 1; day <= 5; day++) {
-      // Monday-Friday
-      await prisma.schedule.create({
-        data: {
-          routeId: createdRoutes[i].id,
-          driverId: i < drivers.length ? drivers[i].id : null,
-          dayOfWeek: day,
-          startTime: "06:30",
-          endTime: "09:30",
-          shiftType: "MORNING",
-        },
-      });
-      await prisma.schedule.create({
-        data: {
-          routeId: createdRoutes[i].id,
-          driverId: i < drivers.length ? drivers[i].id : null,
-          dayOfWeek: day,
-          startTime: "16:00",
-          endTime: "19:00",
-          shiftType: "AFTERNOON",
-        },
-      });
+       await prisma.schedule.create({ data: { routeId: createdRoutes[i].id, driverId: driverProfiles[i].id, dayOfWeek: day, startTime: "07:30", endTime: "09:30", shiftType: "MORNING" } });
+       await prisma.schedule.create({ data: { routeId: createdRoutes[i].id, driverId: driverProfiles[i].id, dayOfWeek: day, startTime: "16:30", endTime: "18:30", shiftType: "AFTERNOON" } });
     }
   }
 
-  console.log("✅ Seed complete!");
-  console.log(`   ${await prisma.user.count()} users`);
-  console.log(`   ${await prisma.driver.count()} drivers`);
-  console.log(`   ${await prisma.student.count()} students`);
-  console.log(`   ${await prisma.route.count()} routes`);
-  console.log(`   ${await prisma.stop.count()} stops`);
-  console.log(`   ${await prisma.bus.count()} buses`);
-  console.log(`   ${await prisma.device.count()} devices`);
-  console.log(`   ${await prisma.trip.count()} trips`);
-  console.log(`   ${await prisma.alert.count()} alerts`);
-  console.log(`   ${await prisma.schedule.count()} schedules`);
-  console.log("\n📋 Login credentials:");
-  console.log("   Admin:   admin@tracyg.in / admin123");
-  console.log("   Driver:  ramesh@tracyg.in / driver123");
-  console.log("   Student: arjun@student.edu / student123");
+  console.log("✅ 5 Active Routes restored.");
+  console.log("✅ 5 Buses/Drivers assigned.");
+  console.log("✅ 2 Extra Drivers created (unassigned).");
+  console.log("✅ 2 Extra Buses created (inactive/unlinked).");
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .catch((e) => { console.error(e); process.exit(1); })
+  .finally(async () => { await prisma.$disconnect(); });
