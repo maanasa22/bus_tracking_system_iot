@@ -2,11 +2,12 @@
 description: Latest Session Context and Sync steps for TracyG Enterprise (Shift from Laptop A to B)
 ---
 
-# 🛸 Session Sync: [2026-04-04]
+# 🛸 Session Sync: [2026-04-06]
 
 ### 🎯 Session Objective
 1. Resolve internal TypeScript build errors preventing Railway deployment and standardize user roles.
 2. Implement the **Create Route** functionality in the admin portal Routes & Stops tab.
+3. Sync and fix the **Student & Driver Portal** logins and dashboards with the current 5+2 baseline data.
 
 ### ✅ Latest Context
 
@@ -15,26 +16,17 @@ description: Latest Session Context and Sync steps for TracyG Enterprise (Shift 
 2. Standardized **`SUPER_ADMIN`** → **`SUPERADMIN`** across all files.
 3. Renamed `middleware.ts` → **`proxy.ts`** (Next.js 16 migration).
 
-#### Create Route Feature (Latest)
+#### Create Route Feature
 1. **New file: `src/app/actions/routes.ts`** — Server actions: `createRoute`, `updateRoute`, `deleteRoute`.
-   - `createRoute`: Creates route + stops in one transaction, auto-calculates distance/duration.
-   - `updateRoute`: Drops existing stops and re-creates with new order.
-   - `deleteRoute`: Safely unlinks buses, students, schedules, trips, then deletes route + stops.
-   - All actions revalidate `/routes`, `/fleet`, `/map`.
+2. **New file: `src/app/(admin)/routes/RoutesClientInterface.tsx`** — Full client interface with Dynamic Stop Builder and Edit/Delete Modals.
+3. **Modified: `src/app/(admin)/routes/page.tsx`** — Refactored to Server→Client pattern.
 
-2. **New file: `src/app/(admin)/routes/RoutesClientInterface.tsx`** — Full client interface:
-   - **Create Route Modal**: Opens on button click with form fields for name, description, color palette, status.
-   - **Dynamic Stop Builder**: Add/remove stops with drag-and-drop reordering + up/down arrow fallback.
-   - **Edit Route Modal**: Same form pre-populated with existing data.
-   - **Delete Confirmation Modal**: Warns about unlinking buses and data loss.
-   - **Working Search**: Filters route cards by name, description, or stop name.
-   - **Route color indicators**: Left border on each card matches route color.
-
-3. **Modified: `src/app/(admin)/routes/page.tsx`** — Refactored to Server→Client pattern (same as Fleet page).
-   - Fetches data server-side, serializes with BigInt replacer, passes to `RoutesClientInterface`.
-
-4. **Build verified**: `npm run build` passes cleanly (exit code 0).
-5. **Pushed to GitHub**: All changes on `main` branch.
+#### Portal Login & Data Sync (NEW)
+1. **Updated: `src/app/auth/login/page.tsx`** — Updated the 'Fill Driver' and 'Fill Student' demo buttons to use the current '5+2' baseline accounts:
+   - **Driver**: `venkateshr@tracyg.in` / `driver123`
+   - **Student**: `arjunm.std@jgi.edu` / `student123`
+2. **Verified Dashboards**: Confirmed that logging in as the sample driver (Venkatesh) and student (Arjun) displays live route summaries, assigned vehicles (e.g. `KA-01-AF-1234`), and stop itineraries correctly.
+3. **Database Audit**: Confirmed all 7 drivers and 5 students from the seed script are correctly linked to their respective buses, routes, and stops.
 
 ---
 
@@ -57,17 +49,17 @@ Follow these steps every time you switch to the other laptop's Antigravity insta
    npm run dev
    ```
 5. **Use Prefilled Credentials**:
-   Always use these for portal testing:
+   Always use the newest baseline for portal testing:
    - **Admin**: `admin@tracyg.in` / `admin123`
-   - **Driver**: `ramesh@tracyg.in` / `driver123`
-   - **Student**: `arjun@student.edu` / `student123`
+   - **Driver**: `venkateshr@tracyg.in` / `driver123`
+   - **Student**: `arjunm.std@jgi.edu` / `student123`
 
 ---
 
-### 🔥 Route Sync & Map Picker Fixes (Latest addition)
-1. **Interactive Route Picker**: Added Leaflet-based map selection fallback (`StopMapPicker.tsx` dynamically imported `ssr: false` to avoid hydration errors) directly into the Route Stop creation builder.
-2. **Global Sync Architecture Check**: Enforced `router.refresh()` in the client mutation handlers specifically in `RoutesClientInterface.tsx` and `FleetClientInterface.tsx` alongside Next.js server action `revalidatePath("/", "layout")`. This guarantees dropping both server cache and Next.js strict local memory, meaning any CRUD edits instantly propagate dynamically to dependent dropdowns (like the Driver profiles and Fleet assigners)!
-3. **Important Logic Rule Uncovered**: If you can't see a Route inside the "Fleet Management -> Assign Route" Dropdown, strictly **check its Status**: The Fleet page database query is strictly defined as `where: { status: 'ACTIVE' }`. INACTIVE routes are purposefully hidden from dispatcher visibility.
+### 🔥 Feature Fixes & Standard Rules
+1. **Interactive Route Picker**: Added Leaflet-based map selection fallback directly into the Route Stop creation builder.
+2. **Global Sync Architecture**: Enforced `router.refresh()` + `revalidatePath` to ensure instant CRUD propagation across dropdowns.
+3. **Important Logic Rule**: Routes are only visible in Fleet assignments if their status is strictly **`ACTIVE`**.
 
 ---
 
