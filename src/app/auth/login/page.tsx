@@ -126,7 +126,7 @@ export default function LoginPage() {
               <button 
                 onClick={(e) => {
                   e.preventDefault();
-                  (document.getElementById('email') as HTMLInputElement).value = 'ramesh@tracyg.in';
+                  (document.getElementById('email') as HTMLInputElement).value = 'venkateshr@tracyg.in';
                   (document.getElementById('password') as HTMLInputElement).value = 'driver123';
                 }}
                 className="btn-ghost text-xs justify-center py-2 h-auto"
@@ -136,7 +136,7 @@ export default function LoginPage() {
               <button 
                 onClick={(e) => {
                   e.preventDefault();
-                  (document.getElementById('email') as HTMLInputElement).value = 'arjun@student.edu';
+                  (document.getElementById('email') as HTMLInputElement).value = 'arjunm.std@jgi.edu';
                   (document.getElementById('password') as HTMLInputElement).value = 'student123';
                 }}
                 className="btn-ghost text-xs justify-center py-2 h-auto"
